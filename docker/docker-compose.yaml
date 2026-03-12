@@ -1,0 +1,29 @@
+services:
+  ros_workshop:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+
+    container_name: ros_workshop
+
+    network_mode: host
+
+    gpus: all
+
+    volumes:
+      - .:/root/workshop_ws/src:rw
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
+
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - XDG_RUNTIME_DIR=/tmp/runtime-developer
+      - XAUTHORITY=/tmp/.docker.xauth
+
+    devices:
+      - /dev/dri:/dev/dri
+
+    stdin_open: true
+    tty: true
+    privileged: true
