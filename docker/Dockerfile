@@ -1,5 +1,7 @@
 FROM osrf/ros:humble-desktop-full
 
+SHELL ["/bin/bash", "-c"]
+
 # Avoid interactive prompts during package installation
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -24,10 +26,6 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Gazebo
-RUN apt-get install -y \
-    ros-humble-ros-gz \
-    && rm -rf /var/lib/apt/lists/*
 
 # Python scientific stack
 RUN pip3 install --no-cache-dir --upgrade \
@@ -43,8 +41,11 @@ RUN mkdir -p /root/workshop_ws/src/workshop
 WORKDIR /root/workshop_ws
 COPY . src/
 
+RUN export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | grep -F "tag_name" | awk -F\" '{print $4}') \
+    && curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo ${UBUNTU_CODENAME:-${VERSION_CODENAME}})_all.deb"\
+    && dpkg -i /tmp/ros2-apt-source.deb 
 
-RUN apt-get install -y \
+RUN apt-get update && apt-get install -y \
     ros-humble-ament-cmake-pycodestyle \
     ros-humble-rqt-tf-tree \
     ros-humble-tf-transformations \
@@ -66,8 +67,11 @@ RUN rosdep update \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean -qq
 
-RUN /bin/bash -c 'source /opt/ros/humble/setup.bash \
-  && colcon build --merge-install --symlink-install'
+RUN source /opt/ros/humble/setup.bash \
+    && colcon build --merge-install --symlink-install
 
-RUN /bin/sh -c 'echo ". /opt/ros/humble/setup.bash" >> ~/.bashrc' \
- && /bin/sh -c 'echo ". ~/workshop_ws/install/setup.bash" >> ~/.bashrc'
+RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc \
+    && echo "source ~/workshop_ws/install/setup.bash" >> ~/.bashrc \
+    && echo "source /usr/share/colcon_cd/function/colcon_cd.sh" >> ~/.bashrc \
+    && echo "export _colcon_cd_root=/opt/ros/humble/" >> ~/.bashrc \
+    && echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> ~/.bashrc
