@@ -13,10 +13,10 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='root',
+    maintainer='Gustavo Rocha Villela',
     maintainer_email='gustavo.villela@student-cs.fr',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description='Package for comms simulation in the ROS2 workshop.',
+    license='MIT',
     extras_require={
         'test': [
             'pytest',
@@ -24,7 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'talker = comms.talker:main'
+            'talker = comms.talker:main',
+            'listener = comms.listener:main',
         ],
     },
 )

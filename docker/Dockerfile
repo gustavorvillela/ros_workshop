@@ -69,7 +69,7 @@ RUN rosdep update \
     && apt-get clean -qq
 
 RUN source /opt/ros/humble/setup.bash \
-    && colcon build --merge-install --symlink-install
+    && colcon build --symlink-install
 
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc \
     && echo "source ~/workshop_ws/install/setup.bash" >> ~/.bashrc \

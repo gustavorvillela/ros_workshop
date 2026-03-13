@@ -1,0 +1,6 @@
+# Logs e arquivos de execução
+/workshop/comms/comms/__pycache__/
+
+# Configurações pessoais e segredos
+.env
+.vscode/
