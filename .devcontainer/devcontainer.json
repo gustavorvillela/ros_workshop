@@ -21,8 +21,8 @@
       "settings": {
         "python.defaultInterpreterPath": "/usr/bin/python3",
         "python.analysis.extraPaths": [
-          "/opt/ros/humble/lib/python3.8/site-packages",
-          "/home/developer/workshop_ws/install/lib/python3.8/site-packages"
+          "/opt/ros/humble/lib/python3.10/site-packages",
+          "/home/developer/workshop_ws/install/lib/python3.10/site-packages"
         ],
         "C_Cpp.default.compileCommands": "/home/developer/workshop_ws/build/compile_commands.json"
       }
