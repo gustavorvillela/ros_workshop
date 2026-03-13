@@ -10,8 +10,10 @@ services:
 
     gpus: all
 
+    init: true
+
     volumes:
-      - .:/root/workshop_ws/src:rw
+      - ..:/root/workshop_ws/src
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
 
@@ -20,6 +22,11 @@ services:
       - QT_X11_NO_MITSHM=1
       - XDG_RUNTIME_DIR=/tmp/runtime-developer
       - XAUTHORITY=/tmp/.docker.xauth
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - IGN_RENDER_ENGINE=ogre2
+      - LIBGL_DRI3_DISABLE=1
+
 
     devices:
       - /dev/dri:/dev/dri

@@ -1,0 +1,35 @@
+{
+  "name": "ROS Workshop (NVIDIA)",
+
+  "dockerComposeFile": [
+    "../docker/docker-compose.yaml"
+  ],
+
+  "service": "ros_workshop",
+
+  "workspaceFolder": "/root/workshop_ws/src/",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-iot.vscode-ros",
+        "ms-vscode.cpptools",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-vscode.cmake-tools"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/bin/python3",
+        "python.analysis.extraPaths": [
+          "/opt/ros/humble/lib/python3.8/site-packages",
+          "/home/developer/workshop_ws/install/lib/python3.8/site-packages"
+        ],
+        "C_Cpp.default.compileCommands": "/home/developer/workshop_ws/build/compile_commands.json"
+      }
+    }
+  },
+
+  "remoteUser": "root",
+
+  "postStartCommand": "echo 'source /opt/ros/humble/setup.bash' >> ~/.bashrc && echo 'source ~/workshop_ws/install/setup.bash' >> ~/.bashrc"
+}

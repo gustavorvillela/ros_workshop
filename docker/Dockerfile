@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y \
     iputils-ping \
     xvfb \
     curl \
+    mesa-utils \
     && rm -rf /var/lib/apt/lists/*
 
 
