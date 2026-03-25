@@ -49,6 +49,8 @@ RUN export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-inf
 RUN apt-get update && apt-get install -y \
     ros-humble-ament-cmake-pycodestyle \
     ros-humble-rqt-tf-tree \
+    ros-humble-turtlebot3 \
+    ros-humble-turtlebot3-gazebo \
     ros-humble-tf-transformations \
     ros-humble-navigation2 \
     ros-humble-slam-toolbox \
