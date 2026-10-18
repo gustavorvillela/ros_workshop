@@ -59,8 +59,12 @@ RUN apt-get update && apt-get install -y \
     ros-humble-xacro \
     ros-humble-joint-state-publisher \
     ros-humble-joint-state-publisher-gui \
-    ros-humble-sensor-msgs-py 
-    
+    ros-humble-sensor-msgs-py
+
+# Modelos básicos do Gazebo no cache local. Sem isso, o primeiro start baixa da internet
+# e pode passar dos 30 s que o launch do TurtleBot3 espera, e o robô não aparece
+RUN mkdir -p /root/.gazebo/models \
+    && cp -r /usr/share/gazebo-11/models/ground_plane /usr/share/gazebo-11/models/sun /root/.gazebo/models/
 
 # Initialize rosdep
 RUN rosdep init || true
@@ -70,7 +74,8 @@ RUN rosdep update \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean -qq
 
-RUN source /opt/ros/humble/setup.bash \
+# "." e setup.sh em vez de "source" e setup.bash: o podman ignora o SHELL acima e roda em /bin/sh
+RUN . /opt/ros/humble/setup.sh \
     && colcon build --symlink-install
 
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc \

@@ -26,6 +26,7 @@ services:
       - NVIDIA_DRIVER_CAPABILITIES=all
       - IGN_RENDER_ENGINE=ogre2
       - LIBGL_DRI3_DISABLE=1
+      - TURTLEBOT3_MODEL=burger
 
 
     devices:

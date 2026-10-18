@@ -22,14 +22,16 @@
         "python.defaultInterpreterPath": "/usr/bin/python3",
         "python.analysis.extraPaths": [
           "/opt/ros/humble/lib/python3.10/site-packages",
-          "/home/developer/workshop_ws/install/lib/python3.10/site-packages"
+          "/opt/ros/humble/local/lib/python3.10/dist-packages"
         ],
-        "C_Cpp.default.compileCommands": "/home/developer/workshop_ws/build/compile_commands.json"
+        "C_Cpp.default.compileCommands": "/root/workshop_ws/build/ttbot/compile_commands.json",
+        "C_Cpp.default.includePath": [
+          "${workspaceFolder}/**",
+          "/opt/ros/humble/include/**"
+        ]
       }
     }
   },
 
-  "remoteUser": "root",
-
-  "postStartCommand": "echo 'source /opt/ros/humble/setup.bash' >> ~/.bashrc && echo 'source ~/workshop_ws/install/setup.bash' >> ~/.bashrc"
+  "remoteUser": "root"
 }
