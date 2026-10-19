@@ -3,7 +3,7 @@
 <package format="3">
   <name>ttbot</name>
   <version>0.0.0</version>
-  <description>Mini workshop: TurtleBot3 que desvia de obstáculos (C++), com plano B no turtlesim.</description>
+  <description>Workshop de ROS 2 em C++: aula 1 com turtlesim, aula 2 com TurtleBot3 no Gazebo.</description>
   <maintainer email="luiz.perrout10@gmail.com">Luiz Fernando Perrout</maintainer>
   <license>MIT</license>
 

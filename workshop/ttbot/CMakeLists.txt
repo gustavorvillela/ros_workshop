@@ -10,19 +10,23 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(turtlesim REQUIRED)
 
-# Exercício da aula (com TODOs)
-add_executable(desviador src/desviador.cpp)
-ament_target_dependencies(desviador rclcpp geometry_msgs sensor_msgs)
-
-# Versão pronta do exercício
-add_executable(desviador_solucao src/desviador_solucao.cpp)
-ament_target_dependencies(desviador_solucao rclcpp geometry_msgs sensor_msgs)
-
-# Plano B: a mesma ideia no turtlesim
+# Aula 1 (turtlesim): exercício com TODOs e versão pronta
 add_executable(desviador_turtlesim src/desviador_turtlesim.cpp)
 ament_target_dependencies(desviador_turtlesim rclcpp geometry_msgs turtlesim)
 
-install(TARGETS desviador desviador_solucao desviador_turtlesim
+add_executable(desviador_turtlesim_solucao src/desviador_turtlesim_solucao.cpp)
+ament_target_dependencies(desviador_turtlesim_solucao rclcpp geometry_msgs turtlesim)
+
+# Aula 2 (TurtleBot3 no Gazebo): exercício com TODOs e versão pronta
+add_executable(desviador src/desviador.cpp)
+ament_target_dependencies(desviador rclcpp geometry_msgs sensor_msgs)
+
+add_executable(desviador_solucao src/desviador_solucao.cpp)
+ament_target_dependencies(desviador_solucao rclcpp geometry_msgs sensor_msgs)
+
+install(TARGETS
+  desviador_turtlesim desviador_turtlesim_solucao
+  desviador desviador_solucao
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch

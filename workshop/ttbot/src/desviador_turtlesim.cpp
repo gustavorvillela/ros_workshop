@@ -1,9 +1,9 @@
-// Plano B: a mesma ideia do desviador, no turtlesim (roda sem Gazebo e sem GPU).
+// Nó que faz a tartaruga do turtlesim andar e desviar das paredes.
 //   Assina:  /turtle1/pose     (turtlesim/msg/Pose)       -> onde a tartaruga está
 //   Publica: /turtle1/cmd_vel  (geometry_msgs/msg/Twist)  -> velocidade da tartaruga
 //
-// O turtlesim não tem laser: o "sensor" é olhar um ponto a `distancia` metros à frente
-// e ver se ele cai fora da área livre (a janela vai de 0 a ~11 m nos dois eixos).
+// Exercício da aula: complete os TODOs na ordem 1, 2, 3.
+// A versão pronta está em desviador_turtlesim_solucao.cpp.
 
 #include <cmath>
 #include <functional>
@@ -19,42 +19,39 @@ public:
   DesviadorTurtlesim()
   : Node("desviador")
   {
-    pub_ = create_publisher<geometry_msgs::msg::Twist>("turtle1/cmd_vel", 10);
-    sub_ = create_subscription<turtlesim::msg::Pose>(
-      "turtle1/pose", 10,
-      std::bind(&DesviadorTurtlesim::pose_callback, this, std::placeholders::_1));
+    // TODO 1: criar o publisher de turtle1/cmd_vel (geometry_msgs::msg::Twist)
+    //         e o subscriber de turtle1/pose (turtlesim::msg::Pose) que chama pose_callback
 
-    declare_parameter("distancia", 1.0);        // m
-    declare_parameter("velocidade", 1.5);       // m/s
-    declare_parameter("velocidade_giro", 1.5);  // rad/s
+    // TODO 3: declarar os parâmetros distancia, velocidade e velocidade_giro
 
     RCLCPP_INFO(get_logger(), "Desviador (turtlesim) iniciado");
   }
 
 private:
-  // Chamada toda vez que o turtlesim publica a pose da tartaruga
+  // Chamada toda vez que o turtlesim publica a pose da tartaruga (~60 vezes por segundo)
   void pose_callback(const turtlesim::msg::Pose::SharedPtr pose)
   {
-    const double d = get_parameter("distancia").as_double();
-    const double x_frente = pose->x + d * std::cos(pose->theta);
-    const double y_frente = pose->y + d * std::sin(pose->theta);
-
-    geometry_msgs::msg::Twist cmd;
-    if (fora_da_area(x_frente) || fora_da_area(y_frente)) {
-      cmd.angular.z = get_parameter("velocidade_giro").as_double();  // parede à frente: gira
-    } else {
-      cmd.linear.x = get_parameter("velocidade").as_double();        // livre: anda para frente
-    }
-    pub_->publish(cmd);
+    // TODO 2: perguntar parede_a_frente(*pose, DISTANCIA) e publicar:
+    //   - parede à frente: girar no lugar (cmd.angular.z)
+    //   - caminho livre: andar para frente (cmd.linear.x)
   }
 
-  static bool fora_da_area(double coordenada)
+  // O turtlesim não tem laser: o "sensor" é olhar o ponto `distancia` metros à frente
+  // da tartaruga e ver se ele cai fora da área livre da janela
+  static bool parede_a_frente(const turtlesim::msg::Pose & pose, double distancia)
   {
-    return coordenada < MARGEM || coordenada > LADO - MARGEM;
+    const double x = pose.x + distancia * std::cos(pose.theta);
+    const double y = pose.y + distancia * std::sin(pose.theta);
+    return x < MARGEM || x > LADO - MARGEM || y < MARGEM || y > LADO - MARGEM;
   }
 
-  static constexpr double LADO = 11.0;   // tamanho da janela do turtlesim (m)
+  static constexpr double LADO = 11.0;   // a janela vai de 0 a ~11 m nos dois eixos
   static constexpr double MARGEM = 0.5;  // folga até a parede (m)
+
+  // Valores fixos por enquanto. TODO 3: trocar por parâmetros
+  static constexpr double DISTANCIA = 1.0;        // m
+  static constexpr double VELOCIDADE = 1.5;       // m/s
+  static constexpr double VELOCIDADE_GIRO = 1.5;  // rad/s
 
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_;
   rclcpp::Subscription<turtlesim::msg::Pose>::SharedPtr sub_;
