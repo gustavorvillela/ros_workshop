@@ -29,7 +29,7 @@ Testado em ROS 2 Humble + Gazebo 11: em 2 min o robô percorre cerca de 13 m pel
 | `src/desviador.cpp` | Exercício com os 3 TODOs. É o arquivo que você completa ao vivo |
 | `src/desviador_solucao.cpp` | Versão pronta. Mostra o resultado no passo 1 e salva a aula se o seu código der erro |
 | `src/desviador_turtlesim_solucao.cpp` | Plano B: o desviador da aula 1, pronto, no turtlesim |
-| `launch/desviador.launch.py` | Abre Gazebo + TurtleBot3 + desviador |
+| `launch/desviador.launch.py` | Abre Gazebo + TurtleBot3 + RViz + desviador. `rviz:=false` deixa só o Gazebo |
 | `launch/turtlesim.launch.py` | Abre turtlesim + desviador da aula 1 (plano B) |
 
 Todos os executáveis do pacote sobem com o nome de nó `/desviador`, então os comandos de parâmetro são os mesmos em todos.
@@ -390,12 +390,14 @@ Dê **Ctrl+C no T2** (o nó) e **no T1** (o Gazebo).
 # T1
 ros2 launch ttbot desviador.launch.py
 ```
-> "Esse sobe o mundo, o robô e o nosso nó, com o código que vocês acabaram de ver escrito."
+> "Esse sobe o mundo, o robô, o RViz e o nosso nó, com o código que vocês acabaram de ver escrito."
+
+> "O Gazebo é a simulação: o mundo de mentira, com física. O RViz só desenha o que o robô está percebendo. Os pontinhos em volta dele são as 360 distâncias do `/scan`."
 
 **Mostre** `launch/desviador.launch.py`, em três partes:
-1. `DeclareLaunchArgument`: um argumento para escolher qual executável rodar.
+1. `DeclareLaunchArgument`: um argumento para escolher qual executável rodar e outro para ligar ou desligar o RViz.
 2. `IncludeLaunchDescription`: reaproveita o launch do TurtleBot3.
-3. `Node`: o nosso nó, com os parâmetros.
+3. `Node`: o RViz, que só abre se `rviz` for `true`, e o nosso nó, com os parâmetros.
 
 > "O launch é em Python porque o ROS 2 não tem launch em C++, só em Python, XML ou YAML. Mas ele não é código do robô: só diz quais nós subir e com quais parâmetros."
 
