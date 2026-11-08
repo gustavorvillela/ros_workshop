@@ -1,7 +1,7 @@
 # Aula 2 — sim.launch.py
 # Abre o mundo sala.sdf, publica o robot_description a partir do xacro,
 # cria o robô no Gazebo e liga a ponte Gazebo <-> ROS 2. Complete os TODO 1 e 2.
-# Uso: ros2 launch robo_dupla sim.launch.py
+# Uso: ros2 launch robo_lp sim.launch.py
 import os
 
 from ament_index_python.packages import get_package_share_directory
@@ -14,7 +14,7 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
-    pkg = get_package_share_directory('robo_dupla')
+    pkg = get_package_share_directory('robo_lp')
     world = os.path.join(pkg, 'worlds', 'sala.sdf')
     xacro_file = os.path.join(pkg, 'urdf', 'robo.urdf.xacro')
     robot_description = ParameterValue(Command(['xacro ', xacro_file]), value_type=str)

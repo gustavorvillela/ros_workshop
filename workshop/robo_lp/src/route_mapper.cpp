@@ -1,7 +1,7 @@
 // Aula 3 — route_mapper
 // Faz o robô percorrer uma lista de pontos (waypoints) usando a odometria, para o
 // Cartographer mapear a sala sozinho. Complete os TODO 1 a 8 (o 9 é extensão).
-// Compile com: cd ~/workshop_ws && colcon build --packages-select robo_dupla
+// Compile com: cd ~/workshop_ws && colcon build --packages-select robo_lp
 
 #include <algorithm>
 #include <cmath>

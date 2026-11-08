@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>robo_dupla</name>
+  <name>robo_lp</name>
   <version>0.1.0</version>
   <description>Robô diferencial com lidar e IMU, mapeamento autônomo com Cartographer</description>
-  <maintainer email="gustavo.villela@student-cs.fr">Gustavo Rocha Villela</maintainer>
+  <maintainer email="grvillela@cos.ufrj.br">Gustavo Rocha Villela</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
