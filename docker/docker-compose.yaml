@@ -4,29 +4,26 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
 
+    image: ros_workshop:jazzy
     container_name: ros_workshop
 
     network_mode: host
-
-    gpus: all
-
+    ipc: host
     init: true
 
     volumes:
       - ..:/root/workshop_ws/src
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
 
     environment:
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
-      - XDG_RUNTIME_DIR=/tmp/runtime-developer
-      - XAUTHORITY=/tmp/.docker.xauth
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
-      - IGN_RENDER_ENGINE=ogre2
+      - XDG_RUNTIME_DIR=/tmp/runtime-root
+      # Um ID por computador: evita que uma dupla comande o robô da bancada vizinha
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
       - LIBGL_DRI3_DISABLE=1
-
+      # Descomente se o Gazebo abrir com tela preta (máquina sem aceleração gráfica)
+      # - LIBGL_ALWAYS_SOFTWARE=1
 
     devices:
       - /dev/dri:/dev/dri
