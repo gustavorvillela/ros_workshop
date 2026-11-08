@@ -2,6 +2,8 @@
 
 Em 3 aulas de 2 h, você vai escrever nós C++ para o ROS 2, construir no Gazebo um robô próprio com lidar, IMU e odometria, e fazê-lo mapear uma sala sozinho com o Cartographer, seguindo um percurso definido por você.
 
+> Prefere Python? A mesma trilha, com os nós em Python no pacote `robo_py`, está no [README_python.md](README_python.md).
+
 | Aula | Tema | Ao final você terá |
 | --- | --- | --- |
 | [1](#aula-1--ros-2-e-nós-c-com-o-turtlebot3) | ROS 2 e nós C++ com o TurtleBot3 no Gazebo | Um nó que lê o lidar e desvia de obstáculos |
@@ -57,6 +59,7 @@ ros_workshop/
     ├── cpp_pubsub/                   # (você cria) pacote do tutorial publisher/subscriber, Aula 1
     ├── ttbot/                        # Aula 1
     │   └── src/obstacle_avoider.cpp  # (você completa) TODO 1 a 4
+    ├── robo_py/                      # versão em Python das Aulas 1 a 3 (veja o README_python.md)
     └── robo_lp/                   # Aulas 2 e 3
         ├── worlds/
         │   ├── sala.sdf              # mundo com paredes usado no mapeamento
