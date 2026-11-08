@@ -126,7 +126,7 @@ No fim de cada aula, `docker compose -f docker/docker-compose.yaml down` desliga
 
 **Conceitos:** nós, tópicos, mensagens, QoS, `colcon`, `package.xml` e `CMakeLists.txt`, `ros2` CLI, `rqt_graph`, `use_sim_time`.
 
-### 1.1 Linha de comando (15 min)
+### 1.1 Linha de comando 
 
 Siga [Understanding nodes](https://docs.ros.org/en/jazzy/Tutorials/Beginner-CLI-Tools/Understanding-ROS2-Nodes/Understanding-ROS2-Nodes.html) e [Understanding topics](https://docs.ros.org/en/jazzy/Tutorials/Beginner-CLI-Tools/Understanding-ROS2-Topics/Understanding-ROS2-Topics.html) com o turtlesim:
 
@@ -138,7 +138,7 @@ ros2 topic echo /turtle1/pose
 rqt_graph
 ```
 
-### 1.2 Primeiro pacote C++ (30 min)
+### 1.2 Primeiro pacote C++ 
 
 Siga [Creating a package](https://docs.ros.org/en/jazzy/Tutorials/Beginner-Client-Libraries/Creating-Your-First-ROS2-Package.html) e [Writing a simple publisher and subscriber (C++)](https://docs.ros.org/en/jazzy/Tutorials/Beginner-Client-Libraries/Writing-A-Simple-Cpp-Publisher-And-Subscriber.html). **Onde criar:** dentro de `workshop/`, e não num workspace novo:
 
@@ -153,7 +153,7 @@ ros2 run cpp_pubsub listener    # terminal 2
 
 Para comparar, a mesma dupla de nós em Python já está pronta em `workshop/comms`: `ros2 run comms talker` e `ros2 run comms listener`.
 
-### 1.3 TurtleBot3 no Gazebo (15 min)
+### 1.3 TurtleBot3 no Gazebo 
 
 Baseado na [Simulation do e-Manual do TurtleBot3](https://emanual.robotis.com/docs/en/platform/turtlebot3/simulation/):
 
@@ -169,7 +169,7 @@ Anote o **tipo** de mensagem que aparece em `ros2 topic info -v /cmd_vel`: `geom
 
 Para ver o comportamento que você vai programar, rode o nó de exemplo do próprio TurtleBot3, que faz isso em C++: `ros2 run turtlebot3_gazebo turtlebot3_drive`. O código dele, [`turtlebot3_drive.cpp`](https://github.com/ROBOTIS-GIT/turtlebot3_simulations/blob/jazzy/turtlebot3_gazebo/src/turtlebot3_drive.cpp), é uma boa referência.
 
-### 1.4 Exercício: `obstacle_avoider` (40 min)
+### 1.4 Exercício: `obstacle_avoider` 
 
 **Arquivo:** `workshop/ttbot/src/obstacle_avoider.cpp`. O pacote `ttbot` já tem `CMakeLists.txt` e `package.xml` prontos; só complete os `TODO`:
 
@@ -199,7 +199,7 @@ Os parâmetros (`max_speed`, `safe_distance`, `turn_speed`, `cone_deg`) podem se
 
 **Conceitos:** SDF (`model`, `link`, `joint`, sistemas), URDF e xacro, `robot_state_publisher`, conversão URDF → SDF, `ros_gz_bridge`, frames e TF, `/clock` e `use_sim_time`.
 
-### 2.1 Construir o robô em SDF (25 min)
+### 2.1 Construir o robô em SDF 
 
 Siga [Building your own robot](https://gazebosim.org/docs/harmonic/building_robot/). **Onde salvar:** `workshop/robo_dupla/worlds/building_robot.sdf`.
 
@@ -208,7 +208,7 @@ cd ~/workshop_ws/src/workshop/robo_dupla/worlds
 gz sim building_robot.sdf
 ```
 
-### 2.2 Mover o robô (10 min)
+### 2.2 Mover o robô 
 
 Siga [Moving the robot](https://gazebosim.org/docs/harmonic/moving_robot/) até o sistema `DiffDrive` (a parte de teclado pode ser pulada) e teste pelo terminal, com a simulação rodando (botão *play*):
 
@@ -216,7 +216,7 @@ Siga [Moving the robot](https://gazebosim.org/docs/harmonic/moving_robot/) até 
 gz topic -t /cmd_vel -m gz.msgs.Twist -p "linear: {x: 0.5}, angular: {z: 0.3}"
 ```
 
-### 2.3 Lidar (15 min)
+### 2.3 Lidar 
 
 Siga só a seção de lidar de [Sensors](https://gazebosim.org/docs/harmonic/sensors/), ainda no `building_robot.sdf`:
 
@@ -225,7 +225,7 @@ gz topic -l                 # o tópico /lidar deve aparecer
 gz topic -e -t /lidar       # leituras do sensor
 ```
 
-### 2.4 Do SDF ao xacro (30 min)
+### 2.4 Do SDF ao xacro 
 
 Agora o mesmo robô vira um **xacro** (URDF com macros). Assim o ROS conhece a geometria do robô, e o `robot_state_publisher` publica as TFs de cada parte. Referência: [tutoriais de URDF do ROS 2 Jazzy](https://docs.ros.org/en/jazzy/Tutorials/Intermediate/URDF/URDF-Main.html).
 
@@ -397,7 +397,7 @@ rviz2                                                                           
 
 No RViz, mude *Fixed Frame* para `base_link` e adicione os displays **RobotModel** (tópico `/robot_description`) e **TF**.
 
-### 2.5 Spawn e ponte com o ROS 2 (25 min)
+### 2.5 Spawn e ponte com o ROS 2 
 
 Leitura de apoio: [Use ROS 2 to interact with Gazebo](https://gazebosim.org/docs/harmonic/ros2_integration/) e [Setting up a robot simulation (Gazebo)](https://docs.ros.org/en/jazzy/Tutorials/Advanced/Simulators/Gazebo/Gazebo.html).
 
@@ -447,7 +447,7 @@ flowchart TD
 
 **Conceitos:** mapa de ocupação, *scan matching*, a TF `map → odom → base_link`, odometria de rodas, IMU, controle proporcional simples.
 
-### 3.1 SLAM com o TurtleBot3 (25 min)
+### 3.1 SLAM com o TurtleBot3 
 
 Siga a [SLAM Simulation do e-Manual](https://emanual.robotis.com/docs/en/platform/turtlebot3/slam_simulation/). O SLAM padrão do TurtleBot3 no ROS 2 é o Cartographer, pelo pacote `turtlebot3_cartographer`:
 
@@ -463,7 +463,7 @@ Dirija devagar até o mapa fechar e salve:
 ros2 run nav2_map_server map_saver_cli -f ~/workshop_ws/src/maps/tb3_world --ros-args -p use_sim_time:=true
 ```
 
-### 3.2 Cartographer no seu robô (25 min)
+### 3.2 Cartographer no seu robô 
 
 O launch do `turtlebot3_cartographer` aceita outro arquivo de configuração, então você reaproveita o pacote do TurtleBot3 sem mudar nada nele. **Onde criar:** `workshop/robo_dupla/config/robo_2d.lua`, a partir da configuração do TurtleBot3:
 
@@ -491,7 +491,7 @@ ros2 launch turtlebot3_cartographer cartographer.launch.py use_sim_time:=True \
 ros2 run teleop_twist_keyboard teleop_twist_keyboard                                    # terminal 3
 ```
 
-### 3.3 Exercício: `route_mapper` (45 min)
+### 3.3 Exercício: `route_mapper` 
 
 **Arquivo:** `workshop/robo_dupla/src/route_mapper.cpp`. O nó lê a odometria e leva o robô por uma lista de pontos (*waypoints*). O percurso padrão é um quadrado de 6 m que contorna a caixa central da sala:
 
