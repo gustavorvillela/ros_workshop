@@ -57,7 +57,7 @@ ros_workshop/
     ├── cpp_pubsub/                   # (você cria) pacote do tutorial publisher/subscriber, Aula 1
     ├── ttbot/                        # Aula 1
     │   └── src/obstacle_avoider.cpp  # (você completa) TODO 1 a 4
-    └── robo_dupla/                   # Aulas 2 e 3
+    └── robo_lp/                   # Aulas 2 e 3
         ├── worlds/
         │   ├── sala.sdf              # mundo com paredes usado no mapeamento
         │   └── building_robot.sdf    # (você cria) o robô do tutorial do Gazebo
@@ -201,10 +201,10 @@ Os parâmetros (`max_speed`, `safe_distance`, `turn_speed`, `cone_deg`) podem se
 
 ### 2.1 Construir o robô em SDF 
 
-Siga [Building your own robot](https://gazebosim.org/docs/harmonic/building_robot/). **Onde salvar:** `workshop/robo_dupla/worlds/building_robot.sdf`.
+Siga [Building your own robot](https://gazebosim.org/docs/harmonic/building_robot/). **Onde salvar:** `workshop/robo_lp/worlds/building_robot.sdf`.
 
 ```bash
-cd ~/workshop_ws/src/workshop/robo_dupla/worlds
+cd ~/workshop_ws/src/workshop/robo_lp/worlds
 gz sim building_robot.sdf
 ```
 
@@ -229,7 +229,7 @@ gz topic -e -t /lidar       # leituras do sensor
 
 Agora o mesmo robô vira um **xacro** (URDF com macros). Assim o ROS conhece a geometria do robô, e o `robot_state_publisher` publica as TFs de cada parte. Referência: [tutoriais de URDF do ROS 2 Jazzy](https://docs.ros.org/en/jazzy/Tutorials/Intermediate/URDF/URDF-Main.html).
 
-**Onde criar:** `workshop/robo_dupla/urdf/robo.urdf.xacro`. Use o modelo abaixo, com as medidas do `vehicle_blue` do tutorial. Leia cada bloco e compare com o SDF que você escreveu.
+**Onde criar:** `workshop/robo_lp/urdf/robo.urdf.xacro`. Use o modelo abaixo, com as medidas do `vehicle_blue` do tutorial. Leia cada bloco e compare com o SDF que você escreveu.
 
 ![Links e frames do robô](docs/img/robo_frames.png)
 
@@ -386,7 +386,7 @@ O que cada parte resolve:
 Veja o URDF gerado e o SDF que o Gazebo vai receber dele, e confira o modelo no RViz:
 
 ```bash
-cd ~/workshop_ws/src/workshop/robo_dupla/urdf
+cd ~/workshop_ws/src/workshop/robo_lp/urdf
 xacro robo.urdf.xacro > /tmp/robo.urdf
 gz sdf -p /tmp/robo.urdf | less          # compare com o seu building_robot.sdf
 
@@ -401,7 +401,7 @@ No RViz, mude *Fixed Frame* para `base_link` e adicione os displays **RobotModel
 
 Leitura de apoio: [Use ROS 2 to interact with Gazebo](https://gazebosim.org/docs/harmonic/ros2_integration/) e [Setting up a robot simulation (Gazebo)](https://docs.ros.org/en/jazzy/Tutorials/Advanced/Simulators/Gazebo/Gazebo.html).
 
-**Arquivo:** `workshop/robo_dupla/launch/sim.launch.py`. Ele já abre o mundo `worlds/sala.sdf` e sobe o `robot_state_publisher`. Complete os `TODO`:
+**Arquivo:** `workshop/robo_lp/launch/sim.launch.py`. Ele já abre o mundo `worlds/sala.sdf` e sobe o `robot_state_publisher`. Complete os `TODO`:
 
 | TODO | O que fazer |
 | --- | --- |
@@ -411,8 +411,8 @@ Leitura de apoio: [Use ROS 2 to interact with Gazebo](https://gazebosim.org/docs
 O `config/bridge.yaml` já está pronto e liga `/cmd_vel`, `/scan`, `/odom`, `/tf`, `/joint_states`, `/imu` e `/clock`. O `worlds/sala.sdf` também, com os sistemas `Physics`, `UserCommands`, `SceneBroadcaster`, `Sensors` e `Imu`: quando um mundo declara algum sistema, o Gazebo deixa de carregar os padrões, e sem `Sensors` e `Imu` os sensores não publicam nada.
 
 ```bash
-cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_dupla && source install/setup.bash
-ros2 launch robo_dupla sim.launch.py                                   # terminal 1
+cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_lp && source install/setup.bash
+ros2 launch robo_lp sim.launch.py                                   # terminal 1
 ros2 topic list                                                        # terminal 2: /scan, /odom, /imu, /tf...
 ros2 run teleop_twist_keyboard teleop_twist_keyboard                   # terminal 3: dirija o robô
 rviz2                                                                  # terminal 4
@@ -437,7 +437,7 @@ flowchart TD
   base_link -- "robot_state_publisher + /joint_states" --> right_wheel
 ```
 
-**Entregável:** `ros2 launch robo_dupla sim.launch.py` abre o robô na sala, e a árvore de TFs mostra `odom → base_link → lidar_link`.
+**Entregável:** `ros2 launch robo_lp sim.launch.py` abre o robô na sala, e a árvore de TFs mostra `odom → base_link → lidar_link`.
 
 ---
 
@@ -465,10 +465,10 @@ ros2 run nav2_map_server map_saver_cli -f ~/workshop_ws/src/maps/tb3_world --ros
 
 ### 3.2 Cartographer no seu robô 
 
-O launch do `turtlebot3_cartographer` aceita outro arquivo de configuração, então você reaproveita o pacote do TurtleBot3 sem mudar nada nele. **Onde criar:** `workshop/robo_dupla/config/robo_2d.lua`, a partir da configuração do TurtleBot3:
+O launch do `turtlebot3_cartographer` aceita outro arquivo de configuração, então você reaproveita o pacote do TurtleBot3 sem mudar nada nele. **Onde criar:** `workshop/robo_lp/config/robo_2d.lua`, a partir da configuração do TurtleBot3:
 
 ```bash
-cd ~/workshop_ws/src/workshop/robo_dupla/config
+cd ~/workshop_ws/src/workshop/robo_lp/config
 cp $(ros2 pkg prefix --share turtlebot3_cartographer)/config/turtlebot3_lds_2d.lua robo_2d.lua
 ```
 
@@ -483,17 +483,17 @@ Edite estas três linhas do `robo_2d.lua`:
 O resto fica igual: o `tracking_frame` já é `"imu_link"`, que também é o nome no seu xacro, e `published_frame`, `odom_frame` e `use_odometry` já servem. Recompile para instalar o arquivo novo e teste dirigindo:
 
 ```bash
-cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_dupla && source install/setup.bash
-ros2 launch robo_dupla sim.launch.py                                                    # terminal 1
+cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_lp && source install/setup.bash
+ros2 launch robo_lp sim.launch.py                                                    # terminal 1
 ros2 launch turtlebot3_cartographer cartographer.launch.py use_sim_time:=True \
-  cartographer_config_dir:=$(ros2 pkg prefix --share robo_dupla)/config \
+  cartographer_config_dir:=$(ros2 pkg prefix --share robo_lp)/config \
   configuration_basename:=robo_2d.lua                                                   # terminal 2
 ros2 run teleop_twist_keyboard teleop_twist_keyboard                                    # terminal 3
 ```
 
 ### 3.3 Exercício: `route_mapper` 
 
-**Arquivo:** `workshop/robo_dupla/src/route_mapper.cpp`. O nó lê a odometria e leva o robô por uma lista de pontos (*waypoints*). O percurso padrão é um quadrado de 6 m que contorna a caixa central da sala:
+**Arquivo:** `workshop/robo_lp/src/route_mapper.cpp`. O nó lê a odometria e leva o robô por uma lista de pontos (*waypoints*). O percurso padrão é um quadrado de 6 m que contorna a caixa central da sala:
 
 ![sala.sdf e o percurso padrão](docs/img/sala_rota.png)
 
@@ -512,8 +512,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard                            
 Com o Gazebo e o Cartographer abertos (terminais 1 e 2 da seção anterior):
 
 ```bash
-cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_dupla && source install/setup.bash
-ros2 run robo_dupla route_mapper --ros-args -p use_sim_time:=true                       # terminal 3
+cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_lp && source install/setup.bash
+ros2 run robo_lp route_mapper --ros-args -p use_sim_time:=true                       # terminal 3
 # quando aparecer "Percurso concluído" no log:
 ros2 run nav2_map_server map_saver_cli -f ~/workshop_ws/src/maps/sala --ros-args -p use_sim_time:=true
 ```
@@ -531,7 +531,7 @@ Para mudar o percurso sem recompilar: `-p waypoints:="[6.0, 0.0, 6.0, 6.0, 0.0, 
 | Gazebo abre com tela preta ou não abre | Faltou `xhost +local:docker` no computador, ou não há aceleração gráfica: descomente `LIBGL_ALWAYS_SOFTWARE=1` no `docker-compose.yaml` e recrie o contêiner |
 | O robô não anda e não aparece erro | Tipo errado no `/cmd_vel`: confira com `ros2 topic info -v /cmd_vel` e ajuste `use_stamped` |
 | O robô do vizinho se mexe com os seus comandos | Mesmo `ROS_DOMAIN_ID`: suba o contêiner com um ID diferente |
-| `Package 'robo_dupla' not found` ou arquivo novo não encontrado | Faltou recompilar ou dar `source install/setup.bash` no terminal |
+| `Package 'robo_lp' not found` ou arquivo novo não encontrado | Faltou recompilar ou dar `source install/setup.bash` no terminal |
 | `/scan` ou `/imu` sem mensagens | Simulação pausada, ou mundo sem os sistemas `Sensors`/`Imu` |
 | Rodas somem no RViz ou TF incompleta | `/joint_states` fora da ponte, ou `robot_state_publisher` sem `use_sim_time` |
 | Cartographer não gera mapa | `/imu` não chega (com `use_imu_data = true` ele espera a IMU) ou falta `use_sim_time:=True` |
