@@ -153,7 +153,20 @@ Para começar uma aula em casa e continuar na faculdade, use um **fork**: uma c�
 
 5. **No começo de cada sessão, baixe o que enviou do outro computador:** `git pull`, na pasta do repositório.
 
-6. **Receba as atualizações do professor.** Na página do seu fork, clique em **Sync fork → Update branch** e depois rode `git pull`. Se o GitHub avisar de conflito, um arquivo que você mudou também foi atualizado: fale com o professor antes de resolver.
+6. **Receba as atualizações do professor.** Na página do seu fork, clique em **Sync fork → Update branch** e depois rode `git pull`.
+
+   O mesmo pelo terminal, útil quando o botão avisa de conflito:
+
+   ```bash
+   git remote add upstream https://github.com/gustavorvillela/ros_workshop.git   # uma vez só
+   git fetch upstream
+   git merge upstream/main
+   git push
+   ```
+
+   Use `merge`, e não `rebase`: o rebase reescreve os commits que você já enviou ao fork e obriga a um `git push --force`, o que bagunça o histórico se você trabalha em mais de um computador. Um conflito só aparece se o professor mudou as mesmas linhas que você (por exemplo, num arquivo com `TODO`). Nesse caso o git marca o trecho com `<<<<<<<` e `>>>>>>>`: escolha o que fica, salve e rode `git add <arquivo>`, `git commit` e `git push`. Na dúvida, fale com o professor antes.
+
+   > Faça os comandos `git` sempre no terminal do computador, fora do contêiner: dentro dele os arquivos do `.git` passam a pertencer ao `root`, e o `git add` passa a falhar com `insufficient permission`.
 
 > **Computadores da faculdade são compartilhados:** não deixe o token salvo neles. Se o git oferecer guardar a senha, recuse; se já tiver guardado, apague o arquivo `~/.git-credentials` antes de sair.
 
