@@ -468,7 +468,7 @@ ros2 run turtlebot3_teleop teleop_keyboard                                      
 Dirija devagar até o mapa fechar e salve:
 
 ```bash
-ros2 run nav2_map_server map_saver_cli -f ~/workshop_ws/src/maps/tb3_world --ros-args -p use_sim_time:=true
+ros2 run nav2_map_server map_saver_cli -f ~/workshop_ws/src/maps/tb3_world --ros-args -p use_sim_time:=true -p save_map_timeout:=10.0
 ```
 
 ### 3.2 Cartographer no seu robô 
@@ -521,7 +521,7 @@ Com o Gazebo e o Cartographer abertos (terminais 1 e 2 da seção anterior):
 cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_lp && source install/setup.bash
 ros2 run robo_lp route_mapper --ros-args -p use_sim_time:=true                       # terminal 3
 # quando aparecer "Percurso concluído" no log:
-ros2 run nav2_map_server map_saver_cli -f ~/workshop_ws/src/maps/sala --ros-args -p use_sim_time:=true
+ros2 run nav2_map_server map_saver_cli -f ~/workshop_ws/src/maps/sala --ros-args -p use_sim_time:=true -p save_map_timeout:=10.0
 ```
 
 Para mudar o percurso sem recompilar: `-p waypoints:="[6.0, 0.0, 6.0, 6.0, 0.0, 6.0, 0.0, 0.0]"`.
@@ -541,6 +541,7 @@ Para mudar o percurso sem recompilar: `-p waypoints:="[6.0, 0.0, 6.0, 6.0, 0.0, 
 | `/scan` ou `/imu` sem mensagens | Simulação pausada, ou mundo sem os sistemas `Sensors`/`Imu` |
 | Rodas somem no RViz ou TF incompleta | `/joint_states` fora da ponte, ou `robot_state_publisher` sem `use_sim_time` |
 | Cartographer não gera mapa | `/imu` não chega (com `use_imu_data = true` ele espera a IMU) ou falta `use_sim_time:=True` |
+| `map_saver_cli` termina com `Failed to spin map subscription` | Ele não recebeu o `/map` a tempo: confira se o Cartographer está rodando e repita o comando (o `save_map_timeout:=10.0` já dá 10 s de espera, contra 2 s do padrão) |
 | Mapa com paredes duplicadas ou borradas | Robô rápido demais: reduza `v_max` e `w_max` |
 
 ## Referências
