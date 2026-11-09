@@ -1,7 +1,8 @@
 # Aula 2 — sim.launch.py
-# Abre o mundo sala.sdf, publica o robot_description a partir do xacro,
-# cria o robô no Gazebo e liga a ponte Gazebo <-> ROS 2. Complete os TODO 1 e 2.
-# Uso: ros2 launch robo_py sim.launch.py
+# Abre o mundo sala.sdf (deste pacote), publica o robot_description a partir do
+# xacro do pacote robo_description, cria o robô no Gazebo e liga a ponte
+# Gazebo <-> ROS 2. Complete os TODO 1 e 2.
+# Uso: ros2 launch robo_gazebo sim.launch.py
 import os
 
 from ament_index_python.packages import get_package_share_directory
@@ -14,9 +15,11 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
-    pkg = get_package_share_directory('robo_py')
-    world = os.path.join(pkg, 'worlds', 'sala.sdf')
-    xacro_file = os.path.join(pkg, 'urdf', 'robo.urdf.xacro')
+    gazebo_pkg = get_package_share_directory('robo_gazebo')
+    description_pkg = get_package_share_directory('robo_description')
+
+    world = os.path.join(gazebo_pkg, 'worlds', 'sala.sdf')
+    xacro_file = os.path.join(description_pkg, 'urdf', 'robo.urdf.xacro')
     robot_description = ParameterValue(Command(['xacro ', xacro_file]), value_type=str)
 
     gz = IncludeLaunchDescription(
@@ -33,7 +36,7 @@ def generate_launch_description():
     spawn = None
 
     # TODO 2: nó 'parameter_bridge' do pacote ros_gz_bridge.
-    #   - parâmetro config_file apontando para config/bridge.yaml deste pacote
+    #   - parâmetro config_file apontando para config/bridge.yaml deste pacote (gazebo_pkg)
     #   - use_sim_time ligado, como no rsp acima
     bridge = None
 

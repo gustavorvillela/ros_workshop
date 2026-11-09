@@ -2,7 +2,7 @@
 <package format="3">
   <name>robo_lp</name>
   <version>0.1.0</version>
-  <description>Robô diferencial com lidar e IMU, mapeamento autônomo com Cartographer</description>
+  <description>Trilha C++: nó route_mapper, que leva o robô pelo percurso do mapeamento (Aula 3)</description>
   <maintainer email="grvillela@cos.ufrj.br">Gustavo Rocha Villela</maintainer>
   <license>MIT</license>
 
@@ -13,11 +13,8 @@
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
 
-  <exec_depend>xacro</exec_depend>
-  <exec_depend>robot_state_publisher</exec_depend>
-  <exec_depend>ros_gz_sim</exec_depend>
-  <exec_depend>ros_gz_bridge</exec_depend>
-  <exec_depend>turtlebot3_cartographer</exec_depend>
+  <exec_depend>robo_gazebo</exec_depend>
+  <exec_depend>robo_cartographer</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
