@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y \
     python3-scipy \
     python3-matplotlib \
     python3-transforms3d \
+    tmux \
     && rm -rf /var/lib/apt/lists/*
 
 # Atualiza a chave do repositório do ROS (evita falhas de apt por chave expirada)

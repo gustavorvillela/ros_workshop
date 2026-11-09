@@ -2,7 +2,7 @@
   "name": "ROS Workshop (Jazzy)",
 
   "dockerComposeFile": [
-    "../docker/docker-compose.yaml"
+    "../../docker/docker-compose.yaml"
   ],
 
   "service": "ros_workshop",

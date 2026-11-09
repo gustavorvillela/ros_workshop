@@ -1,0 +1,38 @@
+{
+  "name": "ROS Workshop (Jazzy, GPU NVIDIA)",
+
+  "dockerComposeFile": [
+    "../../docker/docker-compose.yaml",
+    "../../docker/docker-compose.nvidia.yaml"
+  ],
+
+  "service": "ros_workshop",
+
+  "workspaceFolder": "/root/workshop_ws/src/",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-iot.vscode-ros",
+        "ms-vscode.cpptools",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-vscode.cmake-tools"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/bin/python3",
+        "python.analysis.extraPaths": [
+          "/opt/ros/jazzy/lib/python3.12/site-packages",
+          "/root/workshop_ws/install/lib/python3.12/site-packages"
+        ],
+        "C_Cpp.default.includePath": [
+          "/opt/ros/jazzy/include/**",
+          "/root/workshop_ws/src/**"
+        ],
+        "C_Cpp.default.compileCommands": "/root/workshop_ws/build/compile_commands.json"
+      }
+    }
+  },
+
+  "remoteUser": "root"
+}
