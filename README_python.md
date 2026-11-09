@@ -35,6 +35,7 @@ flowchart LR
 
 - [Estrutura do repositório](#estrutura-do-repositório)
 - [Preparação do ambiente (antes da Aula 1)](#preparação-do-ambiente-antes-da-aula-1)
+- [Trabalhando de casa e na faculdade](#trabalhando-de-casa-e-na-faculdade)
 - [Aula 1 — ROS 2 e nós Python com o TurtleBot3](#aula-1--ros-2-e-nós-python-com-o-turtlebot3)
 - [Aula 2 — Gazebo: o seu robô com lidar e IMU](#aula-2--gazebo-o-seu-robô-com-lidar-e-imu)
 - [Aula 3 — SLAM e mapeamento autônomo](#aula-3--slam-e-mapeamento-autônomo)
@@ -85,7 +86,7 @@ Dentro do contêiner, este repositório aparece em `~/workshop_ws/src`. Tudo o q
 
 Você precisa de um Linux com [Docker Engine](https://docs.docker.com/engine/install/) e Docker Compose. O seu usuário deve estar no grupo `docker` (confira com `groups`); nos computadores da universidade, isso já vem configurado pela TI.
 
-1. Clone o repositório e libere as janelas gráficas para o Docker:
+1. Clone o repositório e libere as janelas gráficas para o Docker. Se for trabalhar em mais de um computador (em casa e na faculdade), clone o seu fork no lugar deste: veja [Trabalhando de casa e na faculdade](#trabalhando-de-casa-e-na-faculdade).
 
    ```bash
    git clone https://github.com/gustavorvillela/ros_workshop.git
@@ -129,6 +130,38 @@ No fim de cada aula, `docker compose -f docker/docker-compose.yaml down` desliga
 > **Python e `--symlink-install`:** depois do primeiro `colcon build`, mudanças nos `.py` valem na hora, sem recompilar. Recompile quando mudar o `setup.py` e sempre que **criar** arquivos nos pacotes compartilhados (xacro, `.lua`, `.sdf`): eles são instalados no momento do build.
 
 > **VS Code (opcional):** com a extensão Dev Containers, use *Reopen in Container*. O VS Code usa o mesmo `docker-compose.yaml`.
+
+## Trabalhando de casa e na faculdade
+
+Para começar uma aula em casa e continuar na faculdade, use um **fork**: uma cópia deste repositório na sua conta do GitHub. Você envia o seu trabalho para o fork no fim de cada sessão e o baixa de volta no outro computador.
+
+1. **Crie o fork (uma vez só).** Nesta página do GitHub, clique em **Fork** e depois em **Create fork**. O resultado é `github.com/SEU_USUARIO/ros_workshop`, e é ele que você clona daqui em diante.
+
+2. **Crie um token para enviar código (uma vez só).** O GitHub não aceita a sua senha no `git push`. Em **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**, dê acesso só ao repositório `ros_workshop` do seu fork, com permissão **Contents: Read and write**. Guarde o token num lugar seguro: ele faz o papel da senha.
+
+3. **Clone o seu fork** em cada computador, no lugar do repositório original, e siga a [Preparação do ambiente](#preparação-do-ambiente-antes-da-aula-1) normalmente:
+
+   ```bash
+   git clone https://github.com/SEU_USUARIO/ros_workshop.git
+   ```
+
+4. **No fim de cada sessão, envie o trabalho.** No terminal do computador (fora do contêiner), na pasta do repositório:
+
+   ```bash
+   git add -A
+   git commit -m "Aula 1: obstacle_avoider"
+   git push
+   ```
+
+   Quando o git pedir usuário e senha, use o seu usuário do GitHub e o token no lugar da senha.
+
+5. **No começo de cada sessão, baixe o que enviou do outro computador:** `git pull`, na pasta do repositório.
+
+6. **Receba as atualizações do professor.** Na página do seu fork, clique em **Sync fork → Update branch** e depois rode `git pull`. Se o GitHub avisar de conflito, um arquivo que você mudou também foi atualizado: fale com o professor antes de resolver.
+
+> **Computadores da faculdade são compartilhados:** não deixe o token salvo neles. Se o git oferecer guardar a senha, recuse; se já tiver guardado, apague o arquivo `~/.git-credentials` antes de sair.
+
+> **Computador de casa:** o ambiente foi preparado e testado no Linux. Windows (WSL2) e macOS não foram testados.
 
 ---
 
