@@ -59,18 +59,23 @@ ros_workshop/
     ├── cpp_pubsub/                   # (você cria) pacote do tutorial publisher/subscriber, Aula 1
     ├── ttbot/                        # Aula 1
     │   └── src/obstacle_avoider.cpp  # (você completa) TODO 1 a 4
-    ├── robo_py/                      # versão em Python das Aulas 1 a 3 (veja o README_python.md)
-    └── robo_lp/                   # Aulas 2 e 3
-        ├── worlds/
-        │   ├── sala.sdf              # mundo com paredes usado no mapeamento
-        │   └── building_robot.sdf    # (você cria) o robô do tutorial do Gazebo
-        ├── urdf/robo.urdf.xacro      # (você cria) o robô em xacro, com lidar e IMU
-        ├── config/
-        │   ├── bridge.yaml           # tópicos ligados entre Gazebo e ROS 2
-        │   └── robo_2d.lua           # (você cria) configuração do Cartographer, Aula 3
-        ├── launch/sim.launch.py      # (você completa) TODO 1 e 2
+    ├── robo_py/                      # nós da versão em Python (veja o README_python.md)
+    ├── robo_description/             # o modelo do robô (Aula 2), usado pelas duas trilhas
+    │   └── urdf/robo.urdf.xacro      # (você cria) o robô em xacro, com lidar e IMU
+    ├── robo_gazebo/                  # a simulação do robô (Aula 2), usada pelas duas trilhas
+    │   ├── worlds/
+    │   │   ├── sala.sdf              # mundo com paredes usado no mapeamento
+    │   │   └── building_robot.sdf    # (você cria) o robô do tutorial do Gazebo
+    │   ├── config/bridge.yaml        # tópicos ligados entre Gazebo e ROS 2
+    │   └── launch/sim.launch.py      # (você completa) TODO 1 e 2
+    ├── robo_cartographer/            # o SLAM do robô (Aula 3), usado pelas duas trilhas
+    │   ├── config/robo_2d.lua        # (você cria) configuração do Cartographer
+    │   └── launch/cartographer.launch.py   # pronto: chama o turtlebot3_cartographer com o robo_2d.lua
+    └── robo_lp/                      # nós da trilha C++, Aula 3
         └── src/route_mapper.cpp      # (você completa) TODO 1 a 9
 ```
+
+O robô fica dividido em três pacotes, como o próprio TurtleBot3 (`turtlebot3_description`, `turtlebot3_gazebo`, `turtlebot3_cartographer`): o modelo, a simulação e o SLAM são compartilhados, e cada trilha só tem os seus nós.
 
 Dentro do contêiner, este repositório aparece em `~/workshop_ws/src`. Tudo o que você cria ou edita ali fica salvo no seu computador, mesmo depois de apagar o contêiner.
 
@@ -204,10 +209,10 @@ Os parâmetros (`max_speed`, `safe_distance`, `turn_speed`, `cone_deg`) podem se
 
 ### 2.1 Construir o robô em SDF 
 
-Siga [Building your own robot](https://gazebosim.org/docs/harmonic/building_robot/). **Onde salvar:** `workshop/robo_lp/worlds/building_robot.sdf`.
+Siga [Building your own robot](https://gazebosim.org/docs/harmonic/building_robot/). **Onde salvar:** `workshop/robo_gazebo/worlds/building_robot.sdf`.
 
 ```bash
-cd ~/workshop_ws/src/workshop/robo_lp/worlds
+cd ~/workshop_ws/src/workshop/robo_gazebo/worlds
 gz sim building_robot.sdf
 ```
 
@@ -232,7 +237,7 @@ gz topic -e -t /lidar       # leituras do sensor
 
 Agora o mesmo robô vira um **xacro** (URDF com macros). Assim o ROS conhece a geometria do robô, e o `robot_state_publisher` publica as TFs de cada parte. Referência: [tutoriais de URDF do ROS 2 Jazzy](https://docs.ros.org/en/jazzy/Tutorials/Intermediate/URDF/URDF-Main.html).
 
-**Onde criar:** `workshop/robo_lp/urdf/robo.urdf.xacro`. Use o modelo abaixo, com as medidas do `vehicle_blue` do tutorial. Leia cada bloco e compare com o SDF que você escreveu.
+**Onde criar:** `workshop/robo_description/urdf/robo.urdf.xacro`. Use o modelo abaixo, com as medidas do `vehicle_blue` do tutorial. Leia cada bloco e compare com o SDF que você escreveu.
 
 ![Links e frames do robô](docs/img/robo_frames.png)
 
@@ -389,7 +394,7 @@ O que cada parte resolve:
 Veja o URDF gerado e o SDF que o Gazebo vai receber dele, e confira o modelo no RViz:
 
 ```bash
-cd ~/workshop_ws/src/workshop/robo_lp/urdf
+cd ~/workshop_ws/src/workshop/robo_description/urdf
 xacro robo.urdf.xacro > /tmp/robo.urdf
 gz sdf -p /tmp/robo.urdf | less          # compare com o seu building_robot.sdf
 
@@ -404,7 +409,7 @@ No RViz, mude *Fixed Frame* para `base_link` e adicione os displays **RobotModel
 
 Leitura de apoio: [Use ROS 2 to interact with Gazebo](https://gazebosim.org/docs/harmonic/ros2_integration/) e [Setting up a robot simulation (Gazebo)](https://docs.ros.org/en/jazzy/Tutorials/Advanced/Simulators/Gazebo/Gazebo.html).
 
-**Arquivo:** `workshop/robo_lp/launch/sim.launch.py`. Ele já abre o mundo `worlds/sala.sdf` e sobe o `robot_state_publisher`. Complete os `TODO`:
+**Arquivo:** `workshop/robo_gazebo/launch/sim.launch.py`. Ele já abre o mundo `worlds/sala.sdf` deste pacote e sobe o `robot_state_publisher` com o xacro do pacote `robo_description`: repare no `get_package_share_directory`, que acha os arquivos instalados de cada pacote. Complete os `TODO`:
 
 | TODO | O que fazer |
 | --- | --- |
@@ -414,8 +419,8 @@ Leitura de apoio: [Use ROS 2 to interact with Gazebo](https://gazebosim.org/docs
 O `config/bridge.yaml` já está pronto e liga `/cmd_vel`, `/scan`, `/odom`, `/tf`, `/joint_states`, `/imu` e `/clock`. O `worlds/sala.sdf` também, com os sistemas `Physics`, `UserCommands`, `SceneBroadcaster`, `Sensors` e `Imu`: quando um mundo declara algum sistema, o Gazebo deixa de carregar os padrões, e sem `Sensors` e `Imu` os sensores não publicam nada.
 
 ```bash
-cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_lp && source install/setup.bash
-ros2 launch robo_lp sim.launch.py                                   # terminal 1
+cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_description robo_gazebo && source install/setup.bash
+ros2 launch robo_gazebo sim.launch.py                               # terminal 1
 ros2 topic list                                                        # terminal 2: /scan, /odom, /imu, /tf...
 ros2 run teleop_twist_keyboard teleop_twist_keyboard                   # terminal 3: dirija o robô
 rviz2                                                                  # terminal 4
@@ -440,7 +445,7 @@ flowchart TD
   base_link -- "robot_state_publisher + /joint_states" --> right_wheel
 ```
 
-**Entregável:** `ros2 launch robo_lp sim.launch.py` abre o robô na sala, e a árvore de TFs mostra `odom → base_link → lidar_link`.
+**Entregável:** `ros2 launch robo_gazebo sim.launch.py` abre o robô na sala, e a árvore de TFs mostra `odom → base_link → lidar_link`.
 
 ---
 
@@ -468,10 +473,10 @@ ros2 run nav2_map_server map_saver_cli -f ~/workshop_ws/src/maps/tb3_world --ros
 
 ### 3.2 Cartographer no seu robô 
 
-O launch do `turtlebot3_cartographer` aceita outro arquivo de configuração, então você reaproveita o pacote do TurtleBot3 sem mudar nada nele. **Onde criar:** `workshop/robo_lp/config/robo_2d.lua`, a partir da configuração do TurtleBot3:
+O launch do `turtlebot3_cartographer` aceita outro arquivo de configuração, então você reaproveita o pacote do TurtleBot3 sem mudar nada nele. O pacote `robo_cartographer` já traz um launch que faz isso por você: ele chama o do TurtleBot3 apontando para o `config/robo_2d.lua` do pacote. **Onde criar:** `workshop/robo_cartographer/config/robo_2d.lua`, a partir da configuração do TurtleBot3:
 
 ```bash
-cd ~/workshop_ws/src/workshop/robo_lp/config
+cd ~/workshop_ws/src/workshop/robo_cartographer/config
 cp $(ros2 pkg prefix --share turtlebot3_cartographer)/config/turtlebot3_lds_2d.lua robo_2d.lua
 ```
 
@@ -486,11 +491,9 @@ Edite estas três linhas do `robo_2d.lua`:
 O resto fica igual: o `tracking_frame` já é `"imu_link"`, que também é o nome no seu xacro, e `published_frame`, `odom_frame` e `use_odometry` já servem. Recompile para instalar o arquivo novo e teste dirigindo:
 
 ```bash
-cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_lp && source install/setup.bash
-ros2 launch robo_lp sim.launch.py                                                    # terminal 1
-ros2 launch turtlebot3_cartographer cartographer.launch.py use_sim_time:=True \
-  cartographer_config_dir:=$(ros2 pkg prefix --share robo_lp)/config \
-  configuration_basename:=robo_2d.lua                                                   # terminal 2
+cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_cartographer && source install/setup.bash
+ros2 launch robo_gazebo sim.launch.py                                                 # terminal 1
+ros2 launch robo_cartographer cartographer.launch.py                                  # terminal 2
 ros2 run teleop_twist_keyboard teleop_twist_keyboard                                    # terminal 3
 ```
 

@@ -11,6 +11,5 @@ add_executable(route_mapper src/route_mapper.cpp)
 ament_target_dependencies(route_mapper rclcpp nav_msgs sensor_msgs geometry_msgs)
 
 install(TARGETS route_mapper DESTINATION lib/${PROJECT_NAME})
-install(DIRECTORY urdf worlds config launch DESTINATION share/${PROJECT_NAME})
 
 ament_package()
