@@ -2,7 +2,7 @@
 <package format="3">
   <name>robo_lp</name>
   <version>0.1.0</version>
-  <description>Trilha C++: nó route_mapper, que leva o robô pelo percurso do mapeamento (Aula 3)</description>
+  <description>Trilha C++: nós route_mapper (Aula 3) e color_masks (Aula 4)</description>
   <maintainer email="grvillela@cos.ufrj.br">Gustavo Rocha Villela</maintainer>
   <license>MIT</license>
 
@@ -12,6 +12,8 @@
   <depend>nav_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>cv_bridge</depend>
+  <depend>libopencv-dev</depend>
 
   <exec_depend>robo_gazebo</exec_depend>
   <exec_depend>robo_cartographer</exec_depend>

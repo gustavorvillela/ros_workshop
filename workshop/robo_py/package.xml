@@ -3,7 +3,7 @@
 <package format="3">
   <name>robo_py</name>
   <version>0.1.0</version>
-  <description>Trilha Python: nós obstacle_avoider (Aula 1) e route_mapper (Aula 3)</description>
+  <description>Trilha Python: nós obstacle_avoider (Aula 1), route_mapper (Aula 3) e color_masks (Aula 4)</description>
   <maintainer email="grvillela@cos.ufrj.br">Gustavo Rocha Villela</maintainer>
   <license>MIT</license>
 
@@ -11,6 +11,9 @@
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>python3-opencv</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
 
   <exec_depend>turtlebot3_gazebo</exec_depend>
   <exec_depend>robo_gazebo</exec_depend>
