@@ -9,7 +9,7 @@ Em 4 aulas de 2 h, você vai escrever nós Python para o ROS 2, construir no Gaz
 | [1](#aula-1--ros-2-e-nós-python-com-o-turtlebot3) | ROS 2 e nós Python com o TurtleBot3 no Gazebo | Um nó que lê o lidar e desvia de obstáculos |
 | [2](#aula-2--gazebo-o-seu-robô-com-lidar-e-imu) | Gazebo: do SDF ao xacro, com ponte para o ROS 2 | O seu robô no Gazebo, comandado e lido pelo ROS 2 |
 | [3](#aula-3--slam-e-mapeamento-autônomo) | SLAM com o Cartographer | O mapa da sala feito pelo robô, sem ninguém dirigir |
-| [4](#aula-4--visão-computacional-com-opencv) | Visão computacional: câmera e máscaras de cor com o OpenCV | Um nó que separa os obstáculos coloridos da sala em máscaras |
+| [4](#aula-4--visão-computacional-com-opencv) | Visão computacional: câmera e máscaras de cor com o OpenCV | Obstáculos coloridos na sala e um nó que os separa em máscaras |
 
 O sistema que você terá montado no fim da Aula 3:
 
@@ -66,7 +66,7 @@ ros_workshop/
     │   └── urdf/robo.urdf.xacro      # (você cria) o robô em xacro, com lidar e IMU (e câmera, Aula 4)
     ├── robo_gazebo/                  # a simulação do robô (Aula 2), usada pelas duas trilhas
     │   ├── worlds/
-    │   │   ├── sala.sdf              # mundo com paredes e cilindros coloridos (Aulas 3 e 4)
+    │   │   ├── sala.sdf              # mundo com paredes (Aula 3); (você completa) cilindros coloridos, Aula 4
     │   │   └── building_robot.sdf    # (você cria) o robô do tutorial do Gazebo
     │   ├── config/bridge.yaml        # tópicos ligados entre Gazebo e ROS 2 (inclui a câmera)
     │   └── launch/sim.launch.py      # (você completa) TODO 1 e 2
@@ -658,13 +658,11 @@ Para mudar o percurso sem editar o código: `-p waypoints:="[6.0, 0.0, 6.0, 6.0,
 
 ## Aula 4 — Visão computacional com OpenCV
 
-**Objetivo:** pôr uma câmera no robô e escrever um nó que separa, em máscaras, os cilindros coloridos da sala. Reagir às cores (seguir ou desviar) fica para a Aula 5.
+**Objetivo:** pôr obstáculos coloridos na sala, uma câmera no robô e escrever um nó que separa, em máscaras, os cilindros coloridos da sala. Reagir às cores (seguir ou desviar) fica para a Aula 5.
 
-**Conceitos:** imagem como matriz de pixels, espaços de cor BGR e HSV, limiarização (`inRange`), morfologia (abertura e fechamento), contornos e centroide, `cv_bridge`, frame óptico da câmera, QoS de sensores.
+**Conceitos:** modelos e materiais em SDF, imagem como matriz de pixels, espaços de cor BGR e HSV, limiarização (`inRange`), morfologia (abertura e fechamento), contornos e centroide, `cv_bridge`, frame óptico da câmera, QoS de sensores.
 
-> **Antes da aula:** atualize o seu fork (botão *Sync fork* no GitHub, depois `git pull` no computador) e reconstrua a imagem Docker, porque ela ganhou o OpenCV, o `cv_bridge` e o `rqt_image_view`: `docker compose -f docker/docker-compose.yaml build` e depois `docker compose -f docker/docker-compose.yaml up -d --force-recreate` (com GPU NVIDIA ou no Windows, acrescente o mesmo segundo `-f` de sempre nos dois comandos). A sala também mudou: agora tem quatro cilindros coloridos fora do percurso da Aula 3.
-
-![sala.sdf com os cilindros coloridos](docs/img/sala_rota.png)
+> **Antes da aula:** atualize o seu fork (botão *Sync fork* no GitHub, depois `git pull` no computador) e reconstrua a imagem Docker, porque ela ganhou o OpenCV, o `cv_bridge` e o `rqt_image_view`: `docker compose -f docker/docker-compose.yaml build` e depois `docker compose -f docker/docker-compose.yaml up -d --force-recreate` (com GPU NVIDIA ou no Windows, acrescente o mesmo segundo `-f` de sempre nos dois comandos).
 
 ### 4.1 Imagens e cores
 
@@ -679,7 +677,56 @@ Leia o tutorial [Changing Colorspaces](https://docs.opencv.org/4.x/df/d9d/tutori
 
 As faixas acima são os valores padrão do nó, no formato `[h_min, s_min, v_min, h_max, s_max, v_max]`. S e V mínimos acima de zero descartam o chão e as paredes, que são acinzentados (S baixo).
 
-### 4.2 Câmera no robô
+### 4.2 Exercício: obstáculos coloridos
+
+**Onde editar:** `workshop/robo_gazebo/worlds/sala.sdf`, no lugar do comentário `Aula 4, TODO`, antes de `</world>`. Você vai pôr quatro cilindros de 0,4 m de raio e 1 m de altura em volta do percurso da Aula 3, para o robô ter o que enxergar sem bater neles na volta do `route_mapper`:
+
+![onde colocar os cilindros](docs/img/sala_cilindros.png)
+
+O primeiro vem pronto. Cole-o e entenda cada parte:
+
+```xml
+    <model name="cilindro_vermelho">
+      <static>true</static>
+      <pose>3.0 -2.5 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><cylinder><radius>0.4</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.4</radius><length>1.0</length></cylinder></geometry>
+          <material><ambient>0.8 0.1 0.1 1</ambient><diffuse>0.8 0.1 0.1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material>
+        </visual>
+      </link>
+    </model>
+```
+
+- `<static>true</static>`: o modelo não sofre física, fica parado mesmo se o robô encostar.
+- `<pose>x y z roll pitch yaw</pose>`: a origem do cilindro é o centro dele, por isso `z = 0.5` (metade da altura) para ele ficar apoiado no chão.
+- `<collision>` é a forma que o lidar e a física enxergam; `<visual>` é a que a câmera enxerga. Aqui são iguais, mas não precisam ser.
+- `<material>`: cores RGBA de 0 a 1. `diffuse` é a cor sob a luz, `ambient` a cor na sombra, `specular` o brilho. Um `specular` baixo evita reflexos brancos, que atrapalham a máscara.
+
+Agora crie os outros três copiando o bloco e trocando o `name`, a `pose` e as duas cores:
+
+| `name` | x | y | Cor (`ambient` e `diffuse`, RGBA) |
+| --- | --- | --- | --- |
+| `cilindro_verde` | 8.5 | 3.0 | `0.1 0.7 0.1 1` |
+| `cilindro_azul` | 3.0 | 8.3 | `0.1 0.2 0.8 1` |
+| `cilindro_amarelo` | -2.5 | 1.5 | `0.9 0.8 0.1 1` |
+
+Recompile o `robo_gazebo` (o mundo é instalado pelo pacote) e abra a simulação para conferir os quatro cilindros:
+
+```bash
+cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_gazebo && source install/setup.bash
+ros2 launch robo_gazebo sim.launch.py
+```
+
+**Pergunta:** em que matiz (H) do OpenCV cada cor vai cair? Converta a cor do `diffuse` (multiplicada por 255, e na ordem **BGR**) e compare com as faixas da figura da seção 4.1. Para o vermelho:
+
+```bash
+python3 -c "import cv2, numpy as np; print(cv2.cvtColor(np.uint8([[[26, 26, 204]]]), cv2.COLOR_BGR2HSV))"
+```
+
+Se você quiser trocar a cor de um cilindro, este é o teste que diz se a faixa do nó ainda serve.
+
+### 4.3 Câmera no robô
 
 **Onde editar:** `workshop/robo_description/urdf/robo.urdf.xacro`. Cole este bloco antes de `</robot>`:
 
@@ -741,7 +788,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard                            
 
 Na matriz `K` do `camera_info`, `fx` e `fy` (a distância focal em pixels) saem do `horizontal_fov` e da largura da imagem, e `cx`, `cy` são o centro, perto de (320, 240).
 
-### 4.3 Exercício: `color_masks`
+### 4.4 Exercício: `color_masks`
 
 **Arquivo:** `workshop/robo_py/robo_py/color_masks.py`. O nó recebe a imagem da câmera, converte para HSV e publica uma máscara preto e branco por cor em `/vision/mask/<cor>` (`vermelho`, `verde`, `azul`, `amarelo`), além de uma imagem de depuração em `/vision/debug` com cada objeto encontrado marcado. As faixas de cor, os parâmetros e os desenhos de cor já estão prontos; o `setup.py` e o `package.xml` também.
 
@@ -772,7 +819,7 @@ No `rqt_image_view`, troque o tópico na lista do alto para ver cada `/vision/ma
 ros2 topic pub -r 10 /cmd_vel geometry_msgs/msg/Twist "{angular: {z: 0.4}}"
 ```
 
-### 4.4 Ajuste ao vivo
+### 4.5 Ajuste ao vivo
 
 As faixas são parâmetros, então dá para mexer sem recompilar e ver o efeito na hora:
 
@@ -790,7 +837,7 @@ Para discutir com a dupla:
 3. Compare `kernel_size` 1, 5 e 15. O que a abertura remove, e o que o fechamento preenche?
 4. Aproxime o robô de um cilindro e afaste. O que muda na área e no centroide? Isso será a base da Aula 5.
 
-**Entregável:** o bloco da câmera no `robo.urdf.xacro`, o `color_masks` completo no repositório, e um print do `/vision/debug` com pelo menos dois cilindros marcados.
+**Entregável:** os quatro cilindros no `sala.sdf`, o bloco da câmera no `robo.urdf.xacro`, o `color_masks` completo no repositório, e um print do `/vision/debug` com pelo menos dois cilindros marcados.
 
 ---
 
@@ -809,6 +856,7 @@ Para discutir com a dupla:
 | Cartographer não gera mapa | `/imu` não chega (com `use_imu_data = true` ele espera a IMU) ou falta `use_sim_time:=True` |
 | `map_saver_cli` termina com `Failed to spin map subscription` | Ele não recebeu o `/map` a tempo: confira se o Cartographer está rodando e repita o comando (o `save_map_timeout:=10.0` já dá 10 s de espera, contra 2 s do padrão) |
 | Mapa com paredes duplicadas ou borradas | Robô rápido demais: reduza `v_max` e `w_max` |
+| Cilindros não aparecem no Gazebo ou o mundo não abre | Faltou recompilar o `robo_gazebo`, ou o XML do `sala.sdf` ficou quebrado: confira com `gz sdf -k workshop/robo_gazebo/worlds/sala.sdf` |
 | `/camera/image_raw` sem mensagens ou imagem preta | Bloco da câmera fora do `robo.urdf.xacro`, ou faltou recompilar o `robo_description` e o `robo_gazebo` depois de colar o bloco |
 | `cv_bridge` ou `cv2` não encontrado ao compilar ou rodar | Imagem Docker antiga: reconstrua com `docker compose -f docker/docker-compose.yaml build` e recrie o contêiner |
 | Máscara cheia de pontinhos ou o chão aparece | Faixa larga demais ou `s_min` baixo: aumente `s_min`/`v_min` ou o `kernel_size` |
@@ -821,4 +869,5 @@ Para discutir com a dupla:
 - TurtleBot3: [e-Manual, simulação](https://emanual.robotis.com/docs/en/platform/turtlebot3/simulation/), [SLAM em simulação](https://emanual.robotis.com/docs/en/platform/turtlebot3/slam_simulation/), [`turtlebot3_cartographer`](https://github.com/ROBOTIS-GIT/turtlebot3/tree/jazzy/turtlebot3_cartographer), [`turtlebot3_simulations`](https://github.com/ROBOTIS-GIT/turtlebot3_simulations)
 - [rclpy (API Python do ROS 2)](https://docs.ros.org/en/jazzy/p/rclpy/)
 - [Cartographer ROS](https://google-cartographer-ros.readthedocs.io/)
+- SDF: [SDF worlds do Gazebo](https://gazebosim.org/docs/harmonic/sdf_worlds/), [especificação do SDFormat](http://sdformat.org/spec)
 - OpenCV: [Changing Colorspaces](https://docs.opencv.org/4.x/df/d9d/tutorial_py_colorspaces.html), [Morphological Transformations](https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html), [Contours](https://docs.opencv.org/4.x/d4/d73/tutorial_py_contours_begin.html); [`cv_bridge`](https://index.ros.org/p/cv_bridge/); [câmera no Gazebo](https://gazebosim.org/docs/harmonic/sensors/)
