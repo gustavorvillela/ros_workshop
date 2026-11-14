@@ -36,6 +36,7 @@ flowchart LR
 - [Estrutura do repositório](#estrutura-do-repositório)
 - [Preparação do ambiente (antes da Aula 1)](#preparação-do-ambiente-antes-da-aula-1)
 - [Trabalhando de casa e na faculdade](#trabalhando-de-casa-e-na-faculdade)
+- [Alunos com Windows](#alunos-com-windows)
 - [Aula 1 — ROS 2 e nós C++ com o TurtleBot3](#aula-1--ros-2-e-nós-c-com-o-turtlebot3)
 - [Aula 2 — Gazebo: o seu robô com lidar e IMU](#aula-2--gazebo-o-seu-robô-com-lidar-e-imu)
 - [Aula 3 — SLAM e mapeamento autônomo](#aula-3--slam-e-mapeamento-autônomo)
@@ -51,8 +52,9 @@ ros_workshop/
 ├── docker/
 │   ├── Dockerfile                    # imagem ROS 2 Jazzy + Gazebo Harmonic + TurtleBot3 + Cartographer
 │   ├── docker-compose.yaml           # contêiner ros_workshop (monta este repositório em ~/workshop_ws/src)
-│   └── docker-compose.nvidia.yaml    # opcional, só para GPU NVIDIA
-├── .devcontainer/devcontainer.json   # opcional, para abrir o contêiner no VS Code
+│   ├── docker-compose.nvidia.yaml    # opcional, só para GPU NVIDIA (Linux)
+│   └── docker-compose.wsl.yaml       # opcional, só para Windows (WSL2)
+├── .devcontainer/                    # opcional, VS Code: cpu/, nvidia/ e windows/
 ├── docs/img/                         # figuras deste README
 ├── maps/                             # mapas gerados nas Aulas 3 (.pgm + .yaml)
 └── workshop/
@@ -82,7 +84,7 @@ Dentro do contêiner, este repositório aparece em `~/workshop_ws/src`. Tudo o q
 
 ## Preparação do ambiente (antes da Aula 1)
 
-Você precisa de um Linux com [Docker Engine](https://docs.docker.com/engine/install/) e Docker Compose. O seu usuário deve estar no grupo `docker` (confira com `groups`); nos computadores da universidade, isso já vem configurado pela TI.
+No Windows, siga antes a seção [Alunos com Windows](#alunos-com-windows). Você precisa de um Linux com [Docker Engine](https://docs.docker.com/engine/install/) e Docker Compose. O seu usuário deve estar no grupo `docker` (confira com `groups`); nos computadores da universidade, isso já vem configurado pela TI.
 
 1. Clone o repositório e libere as janelas gráficas para o Docker. Se for trabalhar em mais de um computador (em casa e na faculdade), clone o seu fork no lugar deste: veja [Trabalhando de casa e na faculdade](#trabalhando-de-casa-e-na-faculdade).
 
@@ -171,6 +173,77 @@ Para começar uma aula em casa e continuar na faculdade, use um **fork**: uma c�
 > **Computadores da faculdade são compartilhados:** não deixe o token salvo neles. Se o git oferecer guardar a senha, recuse; se já tiver guardado, apague o arquivo `~/.git-credentials` antes de sair.
 
 > **Computador de casa:** o ambiente foi preparado e testado no Linux. Windows (WSL2) e macOS não foram testados.
+
+
+## Alunos com Windows
+
+O ambiente roda no Windows pelo **WSL2**, que coloca um Ubuntu dentro do Windows, e pelo **WSLg**, que mostra as janelas do Gazebo e do RViz na sua área de trabalho. Depois de instalado, **todos os comandos deste README são digitados no terminal do Ubuntu**, não no PowerShell.
+
+> Esta configuração ainda não foi testada pelo professor num computador com Windows. Se algo der errado, anote a mensagem de erro e avise.
+
+**Você precisa de:** Windows 11 ou Windows 10 atualizado, virtualização ligada na BIOS (normalmente já vem ligada), pelo menos 8 GB de RAM e uns 30 GB livres no disco.
+
+1. **Instale o WSL com o Ubuntu 24.04.** No PowerShell aberto como administrador:
+
+   ```powershell
+   wsl --install -d Ubuntu-24.04
+   wsl --update
+   ```
+
+   Reinicie o computador se ele pedir. Depois abra o **Ubuntu 24.04** pelo menu Iniciar e crie o seu usuário e senha do Linux.
+
+2. **Confira se as janelas e a placa de vídeo chegam ao Linux.** No terminal do Ubuntu:
+
+   ```bash
+   echo $DISPLAY      # deve mostrar :0
+   ls /mnt/wslg       # deve listar arquivos, como weston.log
+   ls /dev/dxg        # a placa de vídeo do Windows vista pelo Linux
+   ```
+
+   Se algum deles falhar, rode `wsl --update` e depois `wsl --shutdown` no PowerShell, e abra o Ubuntu de novo.
+
+3. **Instale o Docker Engine dentro do Ubuntu**, seguindo o [guia oficial para Ubuntu](https://docs.docker.com/engine/install/ubuntu/), e libere o Docker para o seu usuário:
+
+   ```bash
+   sudo usermod -aG docker $USER
+   ```
+
+   Feche o terminal do Ubuntu e abra de novo: `docker run hello-world` deve funcionar sem `sudo`. Se o Docker não iniciar, confira se o arquivo `/etc/wsl.conf` tem as linhas `[boot]` e `systemd=true`, rode `wsl --shutdown` no PowerShell e abra o Ubuntu de novo. Se você já usa o Docker Desktop com a integração WSL ligada para o Ubuntu, ele também deve servir, mas não foi testado.
+
+4. **Clone o repositório dentro do Ubuntu**, na sua pasta pessoal, e não no disco do Windows (`/mnt/c`): lá os arquivos ficam muito mais lentos e as permissões se confundem.
+
+   ```bash
+   cd ~
+   git clone https://github.com/SEU_USUARIO/ros_workshop.git    # o seu fork, ou o original
+   cd ros_workshop
+   ```
+
+5. **Suba o contêiner com o arquivo do Windows.** É o passo 3 da [Preparação do ambiente](#preparação-do-ambiente-antes-da-aula-1), com um arquivo a mais; o `xhost` não é necessário no WSLg:
+
+   ```bash
+   docker compose -f docker/docker-compose.yaml -f docker/docker-compose.wsl.yaml build
+   docker compose -f docker/docker-compose.yaml -f docker/docker-compose.wsl.yaml up -d
+   docker exec -it ros_workshop bash
+   ```
+
+   Daqui em diante siga a preparação e as aulas normalmente. Sempre que o README mandar subir ou desligar o contêiner, acrescente `-f docker/docker-compose.wsl.yaml`. O arquivo da NVIDIA não é usado no Windows: a placa de vídeo, de qualquer marca, chega ao contêiner pelo próprio WSL.
+
+6. **Confira a placa de vídeo dentro do contêiner:**
+
+   ```bash
+   docker exec ros_workshop glxinfo -B | grep "OpenGL renderer"
+   ```
+
+   Deve aparecer `D3D12 (...)` com o nome da sua placa. Se aparecer `llvmpipe`, o desenho está sendo feito pela CPU: funciona, só que mais devagar.
+
+**VS Code:** instale o VS Code no Windows com as extensões **WSL** e **Dev Containers**. No terminal do Ubuntu, dentro da pasta do repositório, rode `code .`; depois use *Reopen in Container* e escolha **ROS Workshop (Jazzy, Windows/WSL)**.
+
+| Sintoma no Windows | Solução |
+| --- | --- |
+| `cannot open display` ou nenhuma janela aparece | `wsl --shutdown` no PowerShell, espere alguns segundos e abra o Ubuntu de novo |
+| Gazebo com tela preta, travando ou fechando sozinho | Descomente `LIBGL_ALWAYS_SOFTWARE=1` em `docker/docker-compose.wsl.yaml` e recrie o contêiner (`down` e `up -d`) |
+| Erro sobre `!override` ao subir o contêiner | Docker Compose antigo: atualize o Docker (precisa da versão 2.24.4 ou mais nova) |
+| Computador lento, ou o Gazebo fecha por falta de memória | Crie o arquivo `C:\Users\SEU_USUARIO\.wslconfig` com as linhas `[wsl2]` e `memory=8GB`, e rode `wsl --shutdown` |
 
 ---
 

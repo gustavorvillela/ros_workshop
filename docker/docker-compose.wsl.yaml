@@ -1,0 +1,22 @@
+# Opcional, só para Windows (WSL2 + WSLg). Rode dentro do terminal do Ubuntu do WSL,
+# sempre junto com o arquivo principal:
+#   docker compose -f docker/docker-compose.yaml -f docker/docker-compose.wsl.yaml up -d
+# Requer Docker Compose 2.24.4 ou mais novo (por causa do !override).
+services:
+  ros_workshop:
+    # No WSL não existe /dev/dri: a GPU do Windows chega ao Linux por /dev/dxg (DirectX 12)
+    devices: !override
+      - /dev/dxg:/dev/dxg
+
+    volumes:
+      - /mnt/wslg:/mnt/wslg              # servidor gráfico do WSLg (janelas no Windows)
+      - /usr/lib/wsl:/usr/lib/wsl:ro     # bibliotecas da GPU do Windows para o Linux
+
+    environment:
+      - WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-0}
+      - XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir
+      - PULSE_SERVER=/mnt/wslg/PulseServer
+      - LD_LIBRARY_PATH=/usr/lib/wsl/lib
+      - GALLIUM_DRIVER=d3d12             # OpenGL pela GPU do Windows (Mesa + DirectX 12)
+      # Se o Gazebo abrir com tela preta ou travar, descomente para desenhar pela CPU:
+      # - LIBGL_ALWAYS_SOFTWARE=1
