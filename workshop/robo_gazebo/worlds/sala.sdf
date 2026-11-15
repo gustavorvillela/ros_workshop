@@ -97,5 +97,10 @@
         </visual>
       </link>
     </model>
+
+    <!-- Aula 4, TODO: cole aqui os quatro cilindros coloridos (veja a seção 4.2 do README).
+         Posições, fora do percurso do route_mapper:
+           cilindro_vermelho ( 3.0, -2.5)   cilindro_verde ( 8.5, 3.0)
+           cilindro_azul     ( 3.0,  8.3)   cilindro_amarelo (-2.5, 1.5) -->
   </world>
 </sdf>

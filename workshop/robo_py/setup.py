@@ -14,12 +14,13 @@ setup(
     zip_safe=True,
     maintainer='Gustavo Rocha Villela',
     maintainer_email='grvillela@cos.ufrj.br',
-    description='Trilha Python: nós obstacle_avoider (Aula 1) e route_mapper (Aula 3)',
+    description='Trilha Python: nós obstacle_avoider (Aula 1), route_mapper (Aula 3) e color_masks (Aula 4)',
     license='MIT',
     entry_points={
         'console_scripts': [
             'obstacle_avoider = robo_py.obstacle_avoider:main',
             'route_mapper = robo_py.route_mapper:main',
+            'color_masks = robo_py.color_masks:main',
         ],
     },
 )
