@@ -1,6 +1,6 @@
 # Workshop ROS 2 Jazzy: do TurtleBot3 ao mapeamento autônomo em C++
 
-Em 4 aulas de 2 h, você vai escrever nós C++ para o ROS 2, construir no Gazebo um robô próprio com lidar, IMU e odometria, e fazê-lo mapear uma sala sozinho com o Cartographer, seguindo um percurso definido por você. Na Aula 4, o robô ganha uma câmera e você escreve um nó de visão computacional com o OpenCV.
+Em 5 aulas de 2 h, você vai escrever nós C++ para o ROS 2, construir no Gazebo um robô próprio com lidar, IMU e odometria, e fazê-lo mapear uma sala sozinho com o Cartographer, seguindo um percurso definido por você. Nas Aulas 4 e 5, o robô ganha uma câmera e você escreve nós de visão computacional com o OpenCV que acham obstáculos coloridos enquanto ele anda.
 
 > Prefere Python? A mesma trilha, com os nós em Python no pacote `robo_py`, está no [README_python.md](README_python.md).
 
@@ -10,6 +10,7 @@ Em 4 aulas de 2 h, você vai escrever nós C++ para o ROS 2, construir no Gazebo
 | [2](#aula-2--gazebo-o-seu-robô-com-lidar-e-imu) | Gazebo: do SDF ao xacro, com ponte para o ROS 2 | O seu robô no Gazebo, comandado e lido pelo ROS 2 |
 | [3](#aula-3--slam-e-mapeamento-autônomo) | SLAM com o Cartographer | O mapa da sala feito pelo robô, sem ninguém dirigir |
 | [4](#aula-4--visão-computacional-com-opencv) | Visão computacional: câmera e máscaras de cor com o OpenCV | Obstáculos coloridos na sala e um nó que os separa em máscaras |
+| [5](#aula-5--detecção-dos-cilindros) | Detecção: centroides, caixas e mensagens de visão | O robô percorre a sala marcando cada cilindro na imagem da câmera |
 
 O sistema que você terá montado no fim da Aula 3:
 
@@ -42,6 +43,7 @@ flowchart LR
 - [Aula 2 — Gazebo: o seu robô com lidar e IMU](#aula-2--gazebo-o-seu-robô-com-lidar-e-imu)
 - [Aula 3 — SLAM e mapeamento autônomo](#aula-3--slam-e-mapeamento-autônomo)
 - [Aula 4 — Visão computacional com OpenCV](#aula-4--visão-computacional-com-opencv)
+- [Aula 5 — Detecção dos cilindros](#aula-5--detecção-dos-cilindros)
 - [Problemas comuns](#problemas-comuns)
 - [Referências](#referências)
 
@@ -76,10 +78,12 @@ ros_workshop/
     ├── robo_cartographer/            # o SLAM do robô (Aula 3), usado pelas duas trilhas
     │   ├── config/robo_2d.lua        # (você cria) configuração do Cartographer
     │   └── launch/cartographer.launch.py   # pronto: chama o turtlebot3_cartographer com o robo_2d.lua
-    └── robo_lp/                      # nós da trilha C++, Aulas 3 e 4
-        └── src/
-            ├── route_mapper.cpp      # (você completa) TODO 1 a 9, Aula 3
-            └── color_masks.cpp       # (você completa) TODO 1 a 9, Aula 4
+    └── robo_lp/                      # nós da trilha C++, Aulas 3 a 5
+        ├── src/
+        │   ├── route_mapper.cpp      # (você completa) TODO 1 a 9, Aula 3
+        │   ├── color_masks.cpp       # (você completa) TODO 1 a 7, Aula 4
+        │   └── cylinder_detector.cpp # (você completa) TODO 1 a 9, Aula 5
+        └── launch/aula5.launch.py    # (você completa) TODO 1 a 3, Aula 5
 ```
 
 O robô fica dividido em três pacotes, como o próprio TurtleBot3 (`turtlebot3_description`, `turtlebot3_gazebo`, `turtlebot3_cartographer`): o modelo, a simulação e o SLAM são compartilhados, e cada trilha só tem os seus nós.
@@ -787,30 +791,28 @@ Na matriz `K` do `camera_info`, `fx` e `fy` (a distância focal em pixels) saem 
 
 ### 4.4 Exercício: `color_masks`
 
-**Arquivo:** `workshop/robo_lp/src/color_masks.cpp`. O nó recebe a imagem da câmera, converte para HSV e publica uma máscara preto e branco por cor em `/vision/mask/<cor>` (`vermelho`, `verde`, `azul`, `amarelo`), além de uma imagem de depuração em `/vision/debug` com cada objeto encontrado marcado. As faixas de cor, os parâmetros e os desenhos de cor já estão prontos; o `CMakeLists.txt` e o `package.xml` também.
+**Arquivo:** `workshop/robo_lp/src/color_masks.cpp`. O nó recebe a imagem da câmera, converte para HSV e publica uma máscara preto e branco por cor em `/vision/mask/<cor>` (`vermelho`, `verde`, `azul`, `amarelo`). Achar os cilindros nas máscaras fica para a Aula 5. As faixas de cor e os parâmetros já estão prontos; o `CMakeLists.txt` e o `package.xml` também.
 
 | TODO | O que fazer |
 | --- | --- |
-| 1 | Criar os publishers `/vision/mask/<cor>` (um por cor, em `mask_pubs_`) e `/vision/debug` |
+| 1 | Criar os publishers `/vision/mask/<cor>`, um por cor, em `mask_pubs_` |
 | 2 | Assinar `/camera/image_raw` com `rclcpp::SensorDataQoS()` |
 | 3 | `mascara()`: `cv::inRange` com os limites da cor; se `h_min > h_max` (vermelho), juntar duas faixas com `cv::bitwise_or` |
 | 4 | Converter a mensagem com `cv_bridge::toCvShare(msg, "bgr8")` e passar para HSV com `cv::cvtColor` |
 | 5 | Limpar a máscara com `cv::morphologyEx`: primeiro `MORPH_OPEN`, depois `MORPH_CLOSE` |
 | 6 | Publicar a máscara (`mono8`) com `cv_bridge::CvImage`, mantendo o `header` da imagem |
-| 7 | `cv::findContours`; para cada contorno com área ≥ `min_area`, desenhar retângulo, centroide e o nome da cor |
-| 8 | Publicar a imagem de depuração em `/vision/debug` (`bgr8`) |
-| 9 | Extensão: no log, a cada 2 s no máximo, a maior área vista de cada cor |
+| 7 | Extensão: contar os pixels de cada máscara com `cv::countNonZero` e mostrar no log |
 
 Com o Gazebo aberto (terminal 1 da seção anterior):
 
 ```bash
 cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_lp && source install/setup.bash
 ros2 run robo_lp color_masks --ros-args -p use_sim_time:=true                         # terminal 2
-ros2 run rqt_image_view rqt_image_view /vision/debug                                   # terminal 3
+ros2 run rqt_image_view rqt_image_view /vision/mask/verde                              # terminal 3
 ros2 run teleop_twist_keyboard teleop_twist_keyboard                                     # terminal 4
 ```
 
-No `rqt_image_view`, troque o tópico na lista do alto para ver cada `/vision/mask/<cor>`. Se preferir não dirigir, faça o robô girar no lugar:
+No `rqt_image_view`, troque o tópico na lista do alto para ver as outras máscaras e a `/camera/image_raw` original. Se preferir não dirigir, faça o robô girar no lugar:
 
 ```bash
 ros2 topic pub -r 10 /cmd_vel geometry_msgs/msg/Twist "{angular: {z: 0.4}}"
@@ -823,7 +825,6 @@ As faixas são parâmetros, então dá para mexer sem recompilar e ver o efeito 
 ```bash
 ros2 param get /color_masks verde
 ros2 param set /color_masks verde "[45, 100, 50, 85, 255, 255]"
-ros2 param set /color_masks min_area 500.0       # double: escreva com ponto
 ros2 param set /color_masks kernel_size 9
 ```
 
@@ -832,9 +833,115 @@ Para discutir com a dupla:
 1. O que acontece com a máscara do verde se você puser `s_min = 0`? Por quê?
 2. Por que o vermelho precisa de duas faixas e as outras cores não?
 3. Compare `kernel_size` 1, 5 e 15. O que a abertura remove, e o que o fechamento preenche?
-4. Aproxime o robô de um cilindro e afaste. O que muda na área e no centroide? Isso será a base da Aula 5.
+4. Aproxime o robô de um cilindro e afaste. O que muda na mancha branca da máscara? Isso será a base da Aula 5.
 
-**Entregável:** os quatro cilindros no `sala.sdf`, o bloco da câmera no `robo.urdf.xacro`, o `color_masks` completo no repositório, e um print do `/vision/debug` com pelo menos dois cilindros marcados.
+**Entregável:** os quatro cilindros no `sala.sdf`, o bloco da câmera no `robo.urdf.xacro`, o `color_masks` completo no repositório, e um print de duas máscaras, cada uma mostrando só o seu cilindro.
+
+---
+
+## Aula 5 — Detecção dos cilindros
+
+**Objetivo:** a partir das máscaras da Aula 4, calcular o centroide e a caixa de cada cilindro, publicar as detecções como mensagens do ROS e republicar a imagem crua da câmera com as caixas desenhadas, enquanto o `route_mapper` da Aula 3 leva o robô pelos waypoints.
+
+**Conceitos:** contornos, momentos de imagem e centroide, caixa delimitadora (*bounding box*), sincronização de tópicos pelo carimbo de tempo (`message_filters`), mensagens padrão de visão (`vision_msgs`), launch com argumentos e condições.
+
+> **Antes da aula:** atualize o fork e reconstrua a imagem Docker, porque ela ganhou o `vision_msgs` (os mesmos dois comandos da Aula 4). O `color_masks` da Aula 4 precisa estar funcionando: este nó usa as máscaras dele.
+
+O sistema desta aula:
+
+```mermaid
+flowchart LR
+  CAM["/camera/image_raw"]
+  CM["color_masks<br/>(Aula 4)"]
+  CD["cylinder_detector<br/>(Aula 5)"]
+  RM["route_mapper<br/>(Aula 3)"]
+  CAM --> CM
+  CM -- "/vision/mask/vermelho, verde, azul, amarelo" --> CD
+  CAM --> CD
+  CD -- "/vision/detections" --> OUT1[Detection2DArray]
+  CD -- "/vision/annotated" --> OUT2[rqt_image_view]
+  RM -- "/cmd_vel" --> GZ[Gazebo]
+```
+
+### 5.1 Centroide e caixa de uma mancha
+
+Leia [Contour Features](https://docs.opencv.org/4.x/dd/d49/tutorial_py_contour_features.html) do OpenCV, até *Bounding Rectangle*. O que vamos usar:
+
+- **Contorno:** `findContours` com `RETR_EXTERNAL` devolve a borda de fora de cada mancha branca da máscara. Uma mancha é um cilindro (ou um pedaço dele, se algo o tampar).
+- **Momentos:** para uma região, `m00` é a área (quantos pixels), `m10` é a soma das coordenadas x e `m01` a soma das y. O **centroide**, o ponto médio da mancha, é então `(m10 / m00, m01 / m00)`.
+- **Caixa:** `boundingRect` dá o menor retângulo alinhado com a imagem que contém o contorno: `x, y` do canto superior esquerdo, largura e altura.
+- **Área mínima:** manchas muito pequenas são ruído ou um cilindro longe demais para confiar. O parâmetro `min_area` (em pixels², `double`) as descarta.
+
+### 5.2 Casando a imagem com as máscaras
+
+O nó precisa desenhar as caixas **na mesma imagem** que gerou as máscaras. Como o `color_masks` copia o `header` da câmera nas máscaras (TODO 6 da Aula 4), as cinco mensagens de um mesmo instante têm o mesmo `header.stamp`. O `message_filters::TimeSynchronizer` recebe as cinco assinaturas e chama o seu callback só quando tem uma mensagem de cada com o **mesmo** `header.stamp`. Se uma das máscaras se perder, aquela imagem é descartada, sem misturar instantes diferentes. Veja a [documentação do message_filters](https://docs.ros.org/en/jazzy/p/message_filters/message_filters.html).
+
+As detecções saem em [`vision_msgs/Detection2DArray`](https://docs.ros.org/en/jazzy/p/vision_msgs/msg/Detection2D.html), o formato padrão de detectores no ROS 2. Cada `Detection2D` tem:
+
+| Campo | O que pomos |
+| --- | --- |
+| `header` | o da imagem da câmera |
+| `id` | a cor |
+| `results[0].hypothesis.class_id` | a cor (a "classe" do objeto) |
+| `results[0].hypothesis.score` | `1.0` (a cor não deixa dúvida) |
+| `bbox.center.position.x`, `.y` | o centro da caixa, em pixels |
+| `bbox.size_x`, `bbox.size_y` | largura e altura da caixa, em pixels |
+
+### 5.3 Exercício: `cylinder_detector`
+
+**Arquivo:** `workshop/robo_lp/src/cylinder_detector.cpp`. A lista de cores, as cores de desenho, o parâmetro `min_area` e o rótulo com o nome da cor já estão prontos; o `CMakeLists.txt` e o `package.xml` também.
+
+| TODO | O que fazer |
+| --- | --- |
+| 1 | Criar os publishers `det_pub_` (`Detection2DArray` em `/vision/detections`) e `img_pub_` (`Image` em `/vision/annotated`) |
+| 2 | Assinar a câmera e as quatro máscaras com `message_filters::Subscriber` e casá-las num `TimeSynchronizer` que chama `on_sync` |
+| 3 | Copiar a imagem da câmera para desenhar (`cv_bridge::toCvCopy(img, "bgr8")`) e pôr o `header` dela em `deteccoes` |
+| 4 | `detectar()`: achar os contornos externos da máscara com `cv::findContours` |
+| 5 | Ignorar os contornos com `cv::contourArea` menor que `min_area` |
+| 6 | **O centroide:** `cv::moments(c)`, e `cx = m10 / m00`, `cy = m01 / m00` |
+| 7 | A caixa com `cv::boundingRect(c)` |
+| 8 | Preencher um `Detection2D` por cilindro, desenhar caixa e centroide na imagem e publicar as duas saídas |
+| 9 | Extensão: assinar `/camera/camera_info` e escrever no rótulo o ângulo do cilindro, `atan2(cx0 - cx, fx)` |
+
+Teste o nó sozinho, com o robô parado ou dirigido por você:
+
+```bash
+cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_lp && source install/setup.bash
+ros2 launch robo_gazebo sim.launch.py                                                   # terminal 1
+ros2 run robo_lp color_masks --ros-args -p use_sim_time:=true                            # terminal 2
+ros2 run robo_lp cylinder_detector --ros-args -p use_sim_time:=true                      # terminal 3
+ros2 run rqt_image_view rqt_image_view /vision/annotated                               # terminal 4
+ros2 topic echo /vision/detections --once                                              # terminal 5
+```
+
+Gire o robô até um cilindro aparecer (`teleop_twist_keyboard` ou o `ros2 topic pub` da Aula 4). Na `/vision/annotated` ele deve ganhar uma caixa, um ponto no centroide e o rótulo; no `echo`, um `Detection2D` com a cor.
+
+### 5.4 Exercício: `aula5.launch.py`
+
+**Arquivo:** `workshop/robo_lp/launch/aula5.launch.py`. Ele já inclui a simulação (`sim.launch.py` do `robo_gazebo`), sobe o `route_mapper` com os waypoints padrão e declara o argumento `rqt`. Complete os `TODO`:
+
+| TODO | O que fazer |
+| --- | --- |
+| 1 | Um `Node` para o `color_masks`, com `use_sim_time` |
+| 2 | Um `Node` para o `cylinder_detector`, com `use_sim_time` e `min_area` |
+| 3 | Um `Node` para o `rqt_image_view` em `/vision/annotated`, com `condition=IfCondition(rqt)` |
+
+```bash
+cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_lp && source install/setup.bash
+ros2 launch robo_lp aula5.launch.py
+```
+
+O robô faz o quadrado da Aula 3 e, com a câmera para a frente, passa pelos quatro cilindros: o verde no primeiro lado, o azul no segundo, o amarelo no terceiro e o vermelho no fim (compare com a figura da seção 4.2). Cada um deve ganhar a sua caixa na janela do `rqt_image_view`. Para rodar sem a janela, como num teste automático: `ros2 launch robo_lp aula5.launch.py rqt:=false`.
+
+### 5.5 Para discutir
+
+1. O centroide e o centro da caixa quase coincidem nos cilindros. Em que situação eles se separariam bastante?
+2. Por que o `cy` dos cilindros quase não muda enquanto o robô anda, e o `cx` muda tanto?
+3. Ponha `min_area` em 5000.0 no launch. Em que trechos do percurso os cilindros somem? O que isso diz sobre distância e área?
+4. O `TimeSynchronizer` exige o mesmo instante exato. Por que funciona aqui, e por que não funcionaria para casar duas câmeras diferentes? (Procure o `ApproximateTime`.)
+5. Com o TODO 9 feito: o ângulo do cilindro é tudo o que o robô precisaria para virar na direção dele. Como você usaria isso para fazer o robô ir até o cilindro verde?
+
+**Entregável:** o `cylinder_detector` e o `aula5.launch.py` completos no repositório, e um vídeo curto (ou três prints) da `/vision/annotated` com cilindros marcados durante o percurso.
 
 ---
 
@@ -855,7 +962,9 @@ Para discutir com a dupla:
 | `/camera/image_raw` sem mensagens ou imagem preta | Bloco da câmera fora do `robo.urdf.xacro`, ou faltou recompilar o `robo_description` e o `robo_gazebo` depois de colar o bloco |
 | `cv_bridge` ou `cv2` não encontrado ao compilar ou rodar | Imagem Docker antiga: reconstrua com `docker compose -f docker/docker-compose.yaml build` e recrie o contêiner |
 | Máscara cheia de pontinhos ou o chão aparece | Faixa larga demais ou `s_min` baixo: aumente `s_min`/`v_min` ou o `kernel_size` |
-| `ros2 param set ... min_area 500` é recusado | `min_area` é `double`: use `500.0` |
+| `min_area` recusado (`ros2 param set` ou launch) | `min_area` é `double`: use `500.0`, não `500` |
+| `cylinder_detector` roda, mas nunca publica | O `TimeSynchronizer` não está casando: confira se o `color_masks` está rodando e se as máscaras saem com o `header` da câmera (TODO 6 da Aula 4) |
+| `vision_msgs` ou `message_filters` não encontrado ao compilar | Imagem Docker antiga: reconstrua com `docker compose -f docker/docker-compose.yaml build` e recrie o contêiner |
 
 ## Referências
 
@@ -864,4 +973,4 @@ Para discutir com a dupla:
 - TurtleBot3: [e-Manual, simulação](https://emanual.robotis.com/docs/en/platform/turtlebot3/simulation/), [SLAM em simulação](https://emanual.robotis.com/docs/en/platform/turtlebot3/slam_simulation/), [`turtlebot3_cartographer`](https://github.com/ROBOTIS-GIT/turtlebot3/tree/jazzy/turtlebot3_cartographer), [`turtlebot3_simulations`](https://github.com/ROBOTIS-GIT/turtlebot3_simulations)
 - [Cartographer ROS](https://google-cartographer-ros.readthedocs.io/)
 - SDF: [SDF worlds do Gazebo](https://gazebosim.org/docs/harmonic/sdf_worlds/), [especificação do SDFormat](http://sdformat.org/spec)
-- OpenCV: [Changing Colorspaces](https://docs.opencv.org/4.x/df/d9d/tutorial_py_colorspaces.html), [Morphological Transformations](https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html), [Contours](https://docs.opencv.org/4.x/d4/d73/tutorial_py_contours_begin.html); [`cv_bridge`](https://index.ros.org/p/cv_bridge/); [câmera no Gazebo](https://gazebosim.org/docs/harmonic/sensors/)
+- OpenCV: [Changing Colorspaces](https://docs.opencv.org/4.x/df/d9d/tutorial_py_colorspaces.html), [Morphological Transformations](https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html), [Contours](https://docs.opencv.org/4.x/d4/d73/tutorial_py_contours_begin.html), [Contour Features](https://docs.opencv.org/4.x/dd/d49/tutorial_py_contour_features.html); [`message_filters`](https://docs.ros.org/en/jazzy/p/message_filters/message_filters.html); [`vision_msgs`](https://docs.ros.org/en/jazzy/p/vision_msgs/msg/Detection2D.html); [`cv_bridge`](https://index.ros.org/p/cv_bridge/); [câmera no Gazebo](https://gazebosim.org/docs/harmonic/sensors/)
