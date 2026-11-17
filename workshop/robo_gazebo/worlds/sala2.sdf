@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <world name="sala2">
+    <!-- Ao declarar sistemas, o Gazebo não carrega os padrões: liste todos os necessários -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+
+    <light type="directional" name="sol">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- Aula 7: sala nova, 24 m x 16 m. O robô nasce em (0, 0), virado para +x.
+         Uma divisória em x = 8 vai da parede sul até y = 0, deixando uma passagem de 8 m ao norte. -->
+    <model name="chao">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><geometry><plane><normal>0 0 1</normal><size>40 40</size></plane></geometry></collision>
+        <visual name="visual"><geometry><plane><normal>0 0 1</normal><size>40 40</size></plane></geometry>
+          <material><ambient>0.8 0.8 0.8 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="parede_sul">
+      <static>true</static>
+      <pose>9.0 -8.0 0.75 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>24.2 0.2 1.5</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>24.2 0.2 1.5</size></box></geometry>
+          <material><ambient>0.7 0.7 0.7 1</ambient><diffuse>0.7 0.7 0.7 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="parede_norte">
+      <static>true</static>
+      <pose>9.0 8.0 0.75 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>24.2 0.2 1.5</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>24.2 0.2 1.5</size></box></geometry>
+          <material><ambient>0.7 0.7 0.7 1</ambient><diffuse>0.7 0.7 0.7 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="parede_oeste">
+      <static>true</static>
+      <pose>-3.0 0.0 0.75 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.2 16.2 1.5</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.2 16.2 1.5</size></box></geometry>
+          <material><ambient>0.7 0.7 0.7 1</ambient><diffuse>0.7 0.7 0.7 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="parede_leste">
+      <static>true</static>
+      <pose>21.0 0.0 0.75 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.2 16.2 1.5</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.2 16.2 1.5</size></box></geometry>
+          <material><ambient>0.7 0.7 0.7 1</ambient><diffuse>0.7 0.7 0.7 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="divisoria">
+      <static>true</static>
+      <pose>8.0 -4.0 0.75 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.2 8.0 1.5</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.2 8.0 1.5</size></box></geometry>
+          <material><ambient>0.6 0.6 0.6 1</ambient><diffuse>0.6 0.6 0.6 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="estante">
+      <static>true</static>
+      <pose>15.0 6.8 0.75 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>3.0 1.2 1.5</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>3.0 1.2 1.5</size></box></geometry>
+          <material><ambient>0.5 0.5 0.5 1</ambient><diffuse>0.5 0.5 0.5 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="bancada">
+      <static>true</static>
+      <pose>15.0 -3.0 0.75 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>1.0 3.0 1.5</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>1.0 3.0 1.5</size></box></geometry>
+          <material><ambient>0.45 0.45 0.45 1</ambient><diffuse>0.45 0.45 0.45 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="pilar">
+      <static>true</static>
+      <pose>3.0 -5.0 0.75 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.6 0.6 1.5</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.6 0.6 1.5</size></box></geometry>
+          <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Aula 7, TODO: cole aqui os quatro cilindros coloridos (veja a seção 7.2 do README),
+         nas posições que vocês planejaram com o planejar_percurso.py. Use os blocos
+         cilindro_<cor> do sala.sdf, trocando só a <pose>. -->
+  </world>
+</sdf>

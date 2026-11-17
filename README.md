@@ -1,6 +1,6 @@
 # Workshop ROS 2 Jazzy: do TurtleBot3 ao mapeamento autônomo em C++
 
-Em 6 aulas de 2 h, você vai escrever nós C++ para o ROS 2, construir no Gazebo um robô próprio com lidar, IMU e odometria, e fazê-lo mapear uma sala sozinho com o Cartographer, seguindo um percurso definido por você. Nas Aulas 4 e 5, o robô ganha uma câmera e você escreve nós de visão computacional com o OpenCV que acham obstáculos coloridos enquanto ele anda. Na Aula 6, você fecha a malha: um controlador PID leva o robô até o cilindro que a câmera vê.
+Em 7 aulas de 2 h, você vai escrever nós C++ para o ROS 2, construir no Gazebo um robô próprio com lidar, IMU e odometria, e fazê-lo mapear uma sala sozinho com o Cartographer, seguindo um percurso definido por você. Nas Aulas 4 e 5, o robô ganha uma câmera e você escreve nós de visão computacional com o OpenCV que acham obstáculos coloridos enquanto ele anda. Na Aula 6, você fecha a malha: um controlador PID leva o robô até o cilindro que a câmera vê. Na Aula 7, você junta tudo para mapear uma sala nova, usando cilindros posicionados por você como waypoints.
 
 > Prefere Python? A mesma trilha, com os nós em Python no pacote `robo_py`, está no [README_python.md](README_python.md).
 
@@ -12,6 +12,7 @@ Em 6 aulas de 2 h, você vai escrever nós C++ para o ROS 2, construir no Gazebo
 | [4](#aula-4--visão-computacional-com-opencv) | Visão computacional: câmera e máscaras de cor com o OpenCV | Obstáculos coloridos na sala e um nó que os separa em máscaras |
 | [5](#aula-5--detecção-dos-cilindros) | Detecção: centroides, caixas e mensagens de visão | O robô percorre a sala marcando cada cilindro na imagem da câmera |
 | [6](#aula-6--controle-pid-ir-até-o-cilindro) | Controle PID: malha fechada com a câmera | O robô vai sozinho até o cilindro da cor que você escolher e para na frente dele |
+| [7](#aula-7--projeto-final-mapear-uma-sala-nova) | Projeto final: missão com waypoints visuais e SLAM | O mapa de uma sala nova, feito pelo robô indo de cilindro em cilindro na ordem que você planejou |
 
 O sistema que você terá montado no fim da Aula 3:
 
@@ -46,6 +47,7 @@ flowchart LR
 - [Aula 4 — Visão computacional com OpenCV](#aula-4--visão-computacional-com-opencv)
 - [Aula 5 — Detecção dos cilindros](#aula-5--detecção-dos-cilindros)
 - [Aula 6 — Controle PID: ir até o cilindro](#aula-6--controle-pid-ir-até-o-cilindro)
+- [Aula 7 — Projeto final: mapear uma sala nova](#aula-7--projeto-final-mapear-uma-sala-nova)
 - [Problemas comuns](#problemas-comuns)
 - [Referências](#referências)
 
@@ -74,23 +76,27 @@ ros_workshop/
     ├── robo_gazebo/                  # a simulação do robô (Aula 2), usada pelas duas trilhas
     │   ├── worlds/
     │   │   ├── sala.sdf              # mundo com paredes (Aula 3); (você completa) cilindros coloridos, Aula 4
+    │   │   ├── sala2.sdf             # sala nova da Aula 7; (você completa) os cilindros
     │   │   └── building_robot.sdf    # (você cria) o robô do tutorial do Gazebo
     │   ├── config/bridge.yaml        # tópicos ligados entre Gazebo e ROS 2 (inclui a câmera)
-    │   └── launch/sim.launch.py      # (você completa) TODO 1 e 2
+    │   ├── scripts/planejar_percurso.py   # pronto: confere um percurso de cilindros (Aula 7)
+    │   └── launch/sim.launch.py      # (você completa) TODO 1 e 2; mundo:=sala2.sdf na Aula 7
     ├── robo_cartographer/            # o SLAM do robô (Aula 3), usado pelas duas trilhas
     │   ├── config/robo_2d.lua        # (você cria) configuração do Cartographer
     │   └── launch/cartographer.launch.py   # pronto: chama o turtlebot3_cartographer com o robo_2d.lua
-    └── robo_lp/                      # nós da trilha C++, Aulas 3 a 6
+    └── robo_lp/                      # nós da trilha C++, Aulas 3 a 7
         ├── include/robo_lp/
         │   └── pid.hpp               # (você completa) TODO 1 a 5, Aula 6
         ├── src/
         │   ├── route_mapper.cpp      # (você completa) TODO 1 a 9, Aula 3
         │   ├── color_masks.cpp       # (você completa) TODO 1 a 7, Aula 4
         │   ├── cylinder_detector.cpp # (você completa) TODO 1 a 9, Aula 5
-        │   └── cylinder_follower.cpp # (você completa) TODO 1 a 6, Aula 6
+        │   ├── cylinder_follower.cpp # (você completa) TODO 1 a 6, Aula 6
+        │   └── missao.cpp            # (você completa) TODO 1 a 6, Aula 7
         └── launch/
             ├── aula5.launch.py       # (você completa) TODO 1 a 3, Aula 5
-            └── aula6.launch.py       # pronto: tudo da Aula 6, com o rqt_plot
+            ├── aula6.launch.py       # pronto: tudo da Aula 6, com o rqt_plot
+            └── aula7.launch.py       # (você completa) TODO 1 a 3, Aula 7
 ```
 
 O robô fica dividido em três pacotes, como o próprio TurtleBot3 (`turtlebot3_description`, `turtlebot3_gazebo`, `turtlebot3_cartographer`): o modelo, a simulação e o SLAM são compartilhados, e cada trilha só tem os seus nós.
@@ -1072,6 +1078,139 @@ Ao final, escolha os seus ganhos para os dois PIDs, sem viés e com `vies_angula
 
 ---
 
+## Aula 7 — Projeto final: mapear uma sala nova
+
+**Objetivo:** juntar tudo. O robô entra numa sala que ninguém mapeou, e vocês decidem onde pôr quatro cilindros coloridos para que, indo de um a outro na ordem certa, ele percorra a sala inteira enquanto o Cartographer faz o mapa. Cada cilindro é um **waypoint visual**: a câmera o encontra (Aulas 4 e 5), os PIDs levam o robô até ele (Aula 6), e um nó novo, a `missao`, diz qual é o próximo.
+
+**Conceitos:** integração de sistemas, planejamento de missão, máquina de estados, serviço de parâmetros (mudar parâmetros de outro nó), exploração para SLAM.
+
+> **Antes da aula:** atualize o fork e recompile. A imagem Docker não mudou. Tudo das Aulas 3 a 6 precisa estar funcionando: o `robo_2d.lua` do Cartographer, o `color_masks`, o `cylinder_detector`, o PID e o `cylinder_follower`.
+
+O sistema completo:
+
+```mermaid
+flowchart LR
+  GZ["Gazebo<br/>sala2.sdf"] -- "/scan, /odom, /imu" --> SLAM["Cartographer<br/>(Aula 3)"]
+  SLAM -- "/map" --> RV[RViz]
+  GZ -- "/camera/image_raw" --> CM["color_masks<br/>(Aula 4)"]
+  CM -- "/vision/mask/*" --> CD["cylinder_detector<br/>(Aula 5)"]
+  CD -- "/vision/detections" --> CF["cylinder_follower<br/>(Aula 6)"]
+  CF -- "/cmd_vel" --> GZ
+  CF -- "/pid/angular, /pid/linear" --> MI["missao<br/>(Aula 7)"]
+  MI -. "parâmetros cor e w_busca" .-> CF
+```
+
+### 7.1 A sala nova
+
+![sala2 vista de cima](docs/img/sala2.png)
+
+A `sala2.sdf` tem 24 m x 16 m, uma divisória que separa dois ambientes com uma passagem ao norte, uma estante, uma bancada e um pilar. Abra e dê uma volta nela:
+
+```bash
+cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_gazebo && source install/setup.bash
+ros2 launch robo_gazebo sim.launch.py mundo:=sala2.sdf
+```
+
+O argumento `mundo` escolhe o arquivo de `worlds/`; sem ele, o `sim.launch.py` continua abrindo a `sala.sdf` das aulas anteriores.
+
+### 7.2 Exercício: onde pôr os cilindros
+
+Antes de posicionar, entenda o que o `cylinder_follower` faz, porque é isso que o robô vai repetir em cada cilindro:
+
+1. **Procura girando para a esquerda** (`w_busca > 0`) até o cilindro da cor pedida aparecer na câmera.
+2. **Alinha e anda em linha reta** até a câmera ficar a 1,5 m da superfície do cilindro. Como a câmera está 1,03 m à frente do centro do robô e o cilindro tem 0,4 m de raio, o centro do robô para a **2,93 m do centro do cilindro**.
+3. **Não desvia de nada.** Ele não sabe que paredes existem.
+
+Daí saem as regras para cada cilindro da sequência:
+
+- **Visível:** do ponto onde o robô parou no cilindro anterior (ou do início, para o primeiro), girando no lugar, a câmera tem que ver o próximo sem parede, móvel ou outro cilindro no meio, e a menos de uns 15 m (mais longe, a caixa fica pequena demais).
+- **Caminho livre:** o robô tem 2 m x 1 m. A faixa reta até a parada precisa de pelo menos 0,5 m livres de cada lado da linha, mais uma folga.
+- **Espaço para girar:** girando no lugar, as pontas do chassi varrem um círculo de 1,12 m de raio. Cada ponto de parada precisa disso livre, mais uma folga.
+- **Cobertura:** o lidar alcança 10 m. Para o mapa sair completo, o percurso tem que passar pelos dois ambientes e chegar perto dos cantos que ficam escondidos atrás dos móveis.
+- **Uma cor por cilindro:** o follower vai até a mancha maior da cor pedida, então duas da mesma cor confundiriam a sequência.
+
+Para não testar cada ideia no Gazebo, use o `planejar_percurso.py`. Ele lê o mundo, simula de forma ideal o que o follower faria em cada cor da sequência, aponta os problemas e desenha o plano:
+
+```bash
+cd ~/workshop_ws/src/workshop/robo_gazebo
+python3 scripts/planejar_percurso.py worlds/sala2.sdf verde azul amarelo vermelho -o plano.png
+```
+
+Para testar uma posição, cole os quatro blocos `cilindro_<cor>` da `sala.sdf` (Aula 4) na `sala2.sdf`, no lugar do comentário `Aula 7, TODO`, troque as `<pose>` e rode o script de novo. Repita até aparecer `Nenhum problema encontrado.` com uma cobertura alta. Ele também mostra a cobertura estimada do lidar. Depois recompile o `robo_gazebo` e confira no Gazebo.
+
+### 7.3 Exercício: `missao`
+
+**Arquivo:** `workshop/robo_lp/src/missao.cpp`. A `missao` é uma **máquina de estados** que não comanda as rodas: ela só muda, pelo serviço de parâmetros, a `cor` que o `cylinder_follower` persegue, e acompanha os erros que ele publica para saber quando o robô chegou.
+
+```mermaid
+stateDiagram-v2
+  [*] --> esperando
+  esperando --> indo: follower pronto, ir_para(1ª cor)
+  indo --> pausa: chegou()
+  pausa --> indo: depois de 'pausa' s, ir_para(próxima cor)
+  pausa --> fim: acabou a sequência, para o robô
+  indo --> indo: tempo_max esgotado, pula (TODO 6)
+  fim --> [*]
+```
+
+O follower começa parado (`cor` `nenhuma` e `w_busca` 0.0, no launch). Os parâmetros da `missao`: `sequencia` (as cores, na ordem), `tol_lin` e `tol_ang` (o quanto os erros podem sobrar na chegada), `tempo_estavel`, `pausa`, `tempo_max` e `w_busca`.
+
+| TODO | O que fazer |
+| --- | --- |
+| 1 | `follower_`: um `rclcpp::AsyncParametersClient` para o nó `cylinder_follower` |
+| 2 | Assinar `/pid/angular` e `/pid/linear` e guardar `{erro, instante}` de cada um |
+| 3 | `ir_para()`: mudar os parâmetros `cor` e `w_busca` do follower com `set_parameters` |
+| 4 | `chegou()`: os dois erros recentes e dentro da tolerância, sem parar, há `tempo_estavel` segundos |
+| 5 | Fim da sequência: parar o follower (`w_busca` 0.0, `cor` `nenhuma`) e avisar no log |
+| 6 | Extensão: desistir de um cilindro depois de `tempo_max` segundos |
+
+Um detalhe já resolvido no código: logo depois de trocar de cor, o follower ainda pode estar usando a última detecção da cor anterior por até `timeout` segundos (Aula 6), e os erros dela estão perto de zero. Por isso `chegou()` ignora os primeiros 2 s depois de cada troca. Dados velhos com cara de novos são um problema clássico de sistemas com vários nós.
+
+Para testar a `missao` sozinha, rode o `aula6.launch.py` (o follower começa indo para o verde) e, noutro terminal:
+
+```bash
+ros2 run robo_lp missao --ros-args -p use_sim_time:=true -p sequencia:="['verde', 'azul']"
+```
+
+### 7.4 Exercício: `aula7.launch.py`
+
+**Arquivo:** `workshop/robo_lp/launch/aula7.launch.py`. A visão, o follower e a imagem já estão lá. Complete os `TODO`:
+
+| TODO | O que fazer |
+| --- | --- |
+| 1 | Incluir o `sim.launch.py` do `robo_gazebo` com `mundo` `sala2.sdf` |
+| 2 | Incluir o `cartographer.launch.py` do `robo_cartographer` (Aula 3) |
+| 3 | Um `Node` da `missao`, com `use_sim_time` e a `sequencia` que vocês planejaram |
+
+Troque também os ganhos do follower (`kp_ang`, `kp_lin`, ...) pelos que vocês escolheram na Aula 6.
+
+### 7.5 A missão
+
+```bash
+cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_gazebo robo_lp && source install/setup.bash
+ros2 launch robo_lp aula7.launch.py
+```
+
+Acompanhe o mapa crescendo no RViz e a imagem anotada no `rqt_image_view`. O log da `missao` mostra cada etapa (`indo para o cilindro ...`, `cheguei ao ...`). Quando aparecer `missão concluída`, salve o mapa sem fechar nada:
+
+```bash
+ros2 run nav2_map_server map_saver_cli -f ~/workshop_ws/src/maps/sala2 --ros-args -p use_sim_time:=true -p save_map_timeout:=10.0
+```
+
+Compare o mapa salvo (`maps/sala2.pgm`) com a figura do 7.1 e com o seu `plano.png`: as regiões que faltaram ficaram longe de todos os trechos do percurso?
+
+### 7.6 Para discutir
+
+1. Que regra do 7.2 foi a mais difícil de cumprir? Que posição vocês mudaram por causa dela?
+2. O `planejar_percurso.py` é ideal: no Gazebo, onde o robô real parou diferente do plano? Por quê (PID, atraso, medida de distância pela altura da caixa)?
+3. A `missao` sabe que o robô chegou só pelos erros do follower. Que outra informação ela poderia usar? E se o cilindro fosse derrubado?
+4. O robô não desvia de obstáculos: toda a segurança está no planejamento. Que sensor do robô permitiria ele mesmo evitar uma batida, e em qual nó vocês poriam isso?
+5. Como vocês fariam para usar mais waypoints do que cores?
+
+**Entregável:** a `sala2.sdf` com os cilindros, o `plano.png` do planejador, a `missao` e o `aula7.launch.py` completos, o mapa `maps/sala2.pgm` e `.yaml`, e um parágrafo justificando as posições escolhidas.
+
+---
+
 ## Problemas comuns
 
 | Sintoma | Causa provável e solução |
@@ -1089,6 +1228,9 @@ Ao final, escolha os seus ganhos para os dois PIDs, sem viés e com `vies_angula
 | `/camera/image_raw` sem mensagens ou imagem preta | Bloco da câmera fora do `robo.urdf.xacro`, ou faltou recompilar o `robo_description` e o `robo_gazebo` depois de colar o bloco |
 | `cv_bridge` ou `cv2` não encontrado ao compilar ou rodar | Imagem Docker antiga: reconstrua com `docker compose -f docker/docker-compose.yaml build` e recrie o contêiner |
 | Máscara cheia de pontinhos ou o chão aparece | Faixa larga demais ou `s_min` baixo: aumente `s_min`/`v_min` ou o `kernel_size` |
+| Na Aula 7, a `missao` fica em `esperando o cylinder_follower...` | O `cylinder_follower` não está rodando ou tem outro nome: confira com `ros2 node list` |
+| Na Aula 7, o robô bate numa parede ou num móvel | O plano não deixa folga: rode o `planejar_percurso.py` de novo com as posições da `sala2.sdf` e afaste o cilindro (ou mude a ordem) |
+| Na Aula 7, o robô gira sem achar o próximo cilindro | Ele não é visível do ponto de parada anterior: veja o aviso do `planejar_percurso.py` para essa cor |
 | Na Aula 6, o robô gira sem parar | Ele não vê o alvo: confira se a `/vision/annotated` marca o cilindro, se o `cor` está escrito certo (`ros2 param get /cylinder_follower cor`) e se o `color_masks` e o `cylinder_detector` estão rodando |
 | `rqt_plot` vazio | Confira os campos: `/pid/angular/data[0]` (com colchetes); os tópicos só aparecem depois que o robô vê o alvo |
 | `ros2 param set /cylinder_follower kp_ang 3` é recusado | Os ganhos são `double`: use `3.0` |
@@ -1104,4 +1246,5 @@ Ao final, escolha os seus ganhos para os dois PIDs, sem viés e com `vies_angula
 - [Cartographer ROS](https://google-cartographer-ros.readthedocs.io/)
 - SDF: [SDF worlds do Gazebo](https://gazebosim.org/docs/harmonic/sdf_worlds/), [especificação do SDFormat](http://sdformat.org/spec)
 - OpenCV: [Changing Colorspaces](https://docs.opencv.org/4.x/df/d9d/tutorial_py_colorspaces.html), [Morphological Transformations](https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html), [Contours](https://docs.opencv.org/4.x/d4/d73/tutorial_py_contours_begin.html), [Contour Features](https://docs.opencv.org/4.x/dd/d49/tutorial_py_contour_features.html); [`message_filters`](https://docs.ros.org/en/jazzy/p/message_filters/message_filters.html); [`vision_msgs`](https://docs.ros.org/en/jazzy/p/vision_msgs/msg/Detection2D.html); [`cv_bridge`](https://index.ros.org/p/cv_bridge/); [câmera no Gazebo](https://gazebosim.org/docs/harmonic/sensors/)
+- Parâmetros: [Understanding parameters](https://docs.ros.org/en/jazzy/Tutorials/Beginner-CLI-Tools/Understanding-ROS2-Parameters/Understanding-ROS2-Parameters.html) (o serviço `set_parameters` que a `missao` usa)
 - Controle: [Controlador PID](https://pt.wikipedia.org/wiki/Controlador_proporcional_integral_derivativo); [`rqt_plot`](https://index.ros.org/p/rqt_plot/)

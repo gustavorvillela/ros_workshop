@@ -3,7 +3,7 @@
 <package format="3">
   <name>robo_py</name>
   <version>0.1.0</version>
-  <description>Trilha Python: nós obstacle_avoider (Aula 1), route_mapper (Aula 3), color_masks (Aula 4), cylinder_detector (Aula 5) e cylinder_follower (Aula 6)</description>
+  <description>Trilha Python: nós obstacle_avoider (Aula 1), route_mapper (Aula 3), color_masks (Aula 4), cylinder_detector (Aula 5), cylinder_follower (Aula 6) e missao (Aula 7)</description>
   <maintainer email="grvillela@cos.ufrj.br">Gustavo Rocha Villela</maintainer>
   <license>MIT</license>
 
