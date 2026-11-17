@@ -2,7 +2,7 @@
 <package format="3">
   <name>robo_lp</name>
   <version>0.1.0</version>
-  <description>Trilha C++: nós route_mapper (Aula 3), color_masks (Aula 4) e cylinder_detector (Aula 5)</description>
+  <description>Trilha C++: nós route_mapper (Aula 3), color_masks (Aula 4), cylinder_detector (Aula 5) e cylinder_follower (Aula 6)</description>
   <maintainer email="grvillela@cos.ufrj.br">Gustavo Rocha Villela</maintainer>
   <license>MIT</license>
 
@@ -16,11 +16,13 @@
   <depend>libopencv-dev</depend>
   <depend>message_filters</depend>
   <depend>vision_msgs</depend>
+  <depend>std_msgs</depend>
 
   <exec_depend>robo_gazebo</exec_depend>
   <exec_depend>robo_cartographer</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>rqt_image_view</exec_depend>
+  <exec_depend>rqt_plot</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -1,6 +1,6 @@
 # Workshop ROS 2 Jazzy: do TurtleBot3 ao mapeamento autônomo em C++
 
-Em 5 aulas de 2 h, você vai escrever nós C++ para o ROS 2, construir no Gazebo um robô próprio com lidar, IMU e odometria, e fazê-lo mapear uma sala sozinho com o Cartographer, seguindo um percurso definido por você. Nas Aulas 4 e 5, o robô ganha uma câmera e você escreve nós de visão computacional com o OpenCV que acham obstáculos coloridos enquanto ele anda.
+Em 6 aulas de 2 h, você vai escrever nós C++ para o ROS 2, construir no Gazebo um robô próprio com lidar, IMU e odometria, e fazê-lo mapear uma sala sozinho com o Cartographer, seguindo um percurso definido por você. Nas Aulas 4 e 5, o robô ganha uma câmera e você escreve nós de visão computacional com o OpenCV que acham obstáculos coloridos enquanto ele anda. Na Aula 6, você fecha a malha: um controlador PID leva o robô até o cilindro que a câmera vê.
 
 > Prefere Python? A mesma trilha, com os nós em Python no pacote `robo_py`, está no [README_python.md](README_python.md).
 
@@ -11,6 +11,7 @@ Em 5 aulas de 2 h, você vai escrever nós C++ para o ROS 2, construir no Gazebo
 | [3](#aula-3--slam-e-mapeamento-autônomo) | SLAM com o Cartographer | O mapa da sala feito pelo robô, sem ninguém dirigir |
 | [4](#aula-4--visão-computacional-com-opencv) | Visão computacional: câmera e máscaras de cor com o OpenCV | Obstáculos coloridos na sala e um nó que os separa em máscaras |
 | [5](#aula-5--detecção-dos-cilindros) | Detecção: centroides, caixas e mensagens de visão | O robô percorre a sala marcando cada cilindro na imagem da câmera |
+| [6](#aula-6--controle-pid-ir-até-o-cilindro) | Controle PID: malha fechada com a câmera | O robô vai sozinho até o cilindro da cor que você escolher e para na frente dele |
 
 O sistema que você terá montado no fim da Aula 3:
 
@@ -44,6 +45,7 @@ flowchart LR
 - [Aula 3 — SLAM e mapeamento autônomo](#aula-3--slam-e-mapeamento-autônomo)
 - [Aula 4 — Visão computacional com OpenCV](#aula-4--visão-computacional-com-opencv)
 - [Aula 5 — Detecção dos cilindros](#aula-5--detecção-dos-cilindros)
+- [Aula 6 — Controle PID: ir até o cilindro](#aula-6--controle-pid-ir-até-o-cilindro)
 - [Problemas comuns](#problemas-comuns)
 - [Referências](#referências)
 
@@ -78,12 +80,16 @@ ros_workshop/
     ├── robo_cartographer/            # o SLAM do robô (Aula 3), usado pelas duas trilhas
     │   ├── config/robo_2d.lua        # (você cria) configuração do Cartographer
     │   └── launch/cartographer.launch.py   # pronto: chama o turtlebot3_cartographer com o robo_2d.lua
-    └── robo_lp/                      # nós da trilha C++, Aulas 3 a 5
+    └── robo_lp/                      # nós da trilha C++, Aulas 3 a 6
         ├── src/
         │   ├── route_mapper.cpp      # (você completa) TODO 1 a 9, Aula 3
         │   ├── color_masks.cpp       # (você completa) TODO 1 a 7, Aula 4
-        │   └── cylinder_detector.cpp # (você completa) TODO 1 a 9, Aula 5
-        └── launch/aula5.launch.py    # (você completa) TODO 1 a 3, Aula 5
+        │   ├── cylinder_detector.cpp # (você completa) TODO 1 a 9, Aula 5
+        │   ├── pid.hpp               # (você completa) TODO 1 a 5, Aula 6
+        │   └── cylinder_follower.cpp # (você completa) TODO 1 a 6, Aula 6
+        └── launch/
+            ├── aula5.launch.py       # (você completa) TODO 1 a 3, Aula 5
+            └── aula6.launch.py       # pronto: tudo da Aula 6, com o rqt_plot
 ```
 
 O robô fica dividido em três pacotes, como o próprio TurtleBot3 (`turtlebot3_description`, `turtlebot3_gazebo`, `turtlebot3_cartographer`): o modelo, a simulação e o SLAM são compartilhados, e cada trilha só tem os seus nós.
@@ -945,6 +951,126 @@ O robô faz o quadrado da Aula 3 e, com a câmera para a frente, passa pelos qua
 
 ---
 
+## Aula 6 — Controle PID: ir até o cilindro
+
+**Objetivo:** fechar a malha entre a câmera e as rodas. Com as detecções da Aula 5, dois controladores PID levam o robô até o cilindro de uma cor e o param a 1,5 m dele. O foco é ver, num gráfico ao vivo, o que cada ganho faz.
+
+**Conceitos:** malha fechada, erro, termos proporcional, integral e derivativo, erro em regime, sobressinal, saturação e anti-windup, atraso de medida, sintonia de ganhos, modelo de câmera pinhole.
+
+> **Antes da aula:** atualize o fork e recompile. A imagem Docker não mudou. Os nós das Aulas 4 e 5 (`color_masks` e `cylinder_detector`) precisam estar funcionando: este nó usa as detecções deles.
+
+### 6.1 O que é um PID
+
+O robô precisa transformar um **erro** (quanto falta) num **comando** (quanto girar, quanto andar). O PID soma três respostas ao erro `e`:
+
+```
+saída = Kp·e  +  Ki·∫e dt  +  Kd·de/dt
+         P           I            D
+```
+
+- **P (proporcional):** reage ao erro de agora. Mais `Kp` = resposta mais rápida, mas com atraso na medida (a câmera e a detecção levam alguns décimos de segundo) um `Kp` alto passa do ponto e oscila.
+- **I (integral):** acumula o erro do passado. Se alguma coisa empurra o robô sempre para o mesmo lado (uma roda desalinhada, o chão inclinado), só o P deixa um erro sobrando, o **erro em regime**; a integral cresce até cancelá-lo. `Ki` demais causa sobressinal e oscilação lenta.
+- **D (derivativo):** reage à velocidade do erro, freando antes de chegar. Amortece o `Kp` alto, mas amplifica ruído e atraso: `Kd` demais também oscila.
+
+Dois cuidados do mundo real entram no código: a **saturação** (o robô não gira mais rápido que `w_max`) e o **anti-windup** (se a saída está saturada, a integral não pode crescer sem limite, senão o robô passa muito do ponto quando o erro troca de sinal). Leia também o [verbete do PID](https://pt.wikipedia.org/wiki/Controlador_proporcional_integral_derivativo).
+
+Num modelo simples do giro do robô (o que ele gira é a integral do comando, a medida chega 0,15 s atrasada e `|w| ≤ 0,6`), as respostas típicas são estas. Você vai reproduzi-las no simulador:
+
+![respostas do PID no modelo simples](docs/img/pid_respostas.png)
+
+A malha desta aula:
+
+```mermaid
+flowchart LR
+  REF["referência:<br/>alvo no centro,<br/>a 1,5 m"] --> E((erro))
+  E --> PID["2 PIDs<br/>(angular e linear)"]
+  PID -- "/cmd_vel" --> R["robô<br/>(Gazebo)"]
+  R --> C["câmera"]
+  C --> V["color_masks +<br/>cylinder_detector"]
+  V -- "/vision/detections" --> M["medida:<br/>ângulo e distância"]
+  M --> E
+```
+
+### 6.2 Medindo o erro com a câmera
+
+Pelo modelo pinhole da câmera (a matriz `K` do `camera_info`, Aula 4):
+
+- **Erro angular:** um ponto na coluna `cx` da imagem está a `atan2(cx0 − cx, fx)` radianos do eixo da câmera. Positivo é à esquerda, o mesmo sentido de `w > 0`. A referência é 0: cilindro no centro.
+- **Distância:** um objeto de altura real `H` a uma distância `Z` aparece com `h = fy·H/Z` pixels. Como os cilindros têm 1 m, `Z = fy · 1,0 / altura_da_caixa`. O erro é `Z − distancia` (padrão 1,5 m): positivo quando está longe.
+
+São dois PIDs independentes: o **angular** comanda `angular.z` e o **linear** comanda `linear.x`. O robô só anda se o cilindro estiver mais ou menos à frente (`|erro angular| < erro_ang_andar`), senão ele giraria em arco e perderia o alvo de vista.
+
+### 6.3 Exercício: o PID
+
+**Arquivo:** `workshop/robo_lp/src/pid.hpp`. A classe é usada duas vezes pelo nó da próxima seção; os limites já vêm prontos no construtor.
+
+| TODO | O que fazer |
+| --- | --- |
+| 1 | Termo proporcional: `p = kp_ * erro` |
+| 2 | Termo integral: `integral_ += erro * dt`, limitado a `±integral_max` com `std::clamp` (anti-windup); `i = ki_ * integral_` |
+| 3 | Termo derivativo: `(erro - erro_anterior_) / dt`, 0 na primeira chamada; `d = kd_ * derivada_` |
+| 4 | Somar os termos e limitar a `±saida_max` (saturação) |
+| 5 | Extensão: filtro passa-baixas na derivada, com `alfa_d` |
+
+### 6.4 Exercício: `cylinder_follower`
+
+**Arquivo:** `workshop/robo_lp/src/cylinder_follower.cpp`. Os parâmetros (cor, distância, ganhos, limites), a leitura do `camera_info` e a publicação de depuração já estão prontos. A cada ciclo, o nó publica em `/pid/angular` e `/pid/linear` um `Float64MultiArray` com `[erro, P, I, D, saída]`.
+
+| TODO | O que fazer |
+| --- | --- |
+| 1 | Publisher de `/cmd_vel`, assinatura de `/vision/detections` e um timer de 20 Hz no relógio do nó (`rclcpp::create_timer`) |
+| 2 | `on_detections()`: entre as detecções da cor pedida, guardar a de caixa mais alta (a mais próxima) em `alvo_` |
+| 3 | `erros()`: erro angular `atan2(cx0 - cx, fx)` e erro de distância `fy * altura / altura_px - distancia` |
+| 4 | Alvo perdido: girar procurando (`w_busca`) e `reset()` nos dois PIDs |
+| 5 | Alvo visto: `angular.z` do `pid_ang_`; `linear.x` do `pid_lin_` só se o alvo estiver à frente |
+| 6 | Extensão: avisar no log uma vez quando chegar |
+
+O `aula6.launch.py` já está pronto: sobe a simulação, o `color_masks`, o `cylinder_detector`, o `cylinder_follower`, a imagem anotada e o `rqt_plot` com o erro e a saída dos dois PIDs.
+
+```bash
+cd ~/workshop_ws && colcon build --symlink-install --packages-select robo_lp && source install/setup.bash
+ros2 launch robo_lp aula6.launch.py                    # vai até o verde, visível da origem
+ros2 launch robo_lp aula6.launch.py cor:=vermelho      # começa procurando: o vermelho está fora da imagem
+```
+
+Para não abrir janelas (por exemplo, num teste): `rqt:=false`. No `rqt_plot`, ajuste a escala com o botão de eixos ou acrescente tópicos no campo do alto, como `/pid/angular/data[2]` para ver só o termo I.
+
+### 6.5 Experimentos de sintonia
+
+Tudo aqui é feito com o nó rodando. Os ganhos são parâmetros lidos a cada ciclo, e trocar a cor do alvo cria um novo degrau de referência, sem precisar reiniciar nada:
+
+```bash
+ros2 param set /cylinder_follower kp_ang 3.0
+ros2 param set /cylinder_follower cor azul        # novo alvo: um degrau no erro angular
+ros2 param set /cylinder_follower cor verde       # e de volta
+```
+
+Use valores com ponto (`3.0`, não `3`): os parâmetros são `double`. Para cada experimento, tire um print do `rqt_plot` do erro angular.
+
+| # | Experimento | Comandos | O que observar |
+| --- | --- | --- | --- |
+| 1 | Só P, pouco ganho | `kp_ang 0.3` | Resposta lenta, sem passar do ponto |
+| 2 | Só P, muito ganho | aumente `kp_ang` (3.0, 6.0, 9.0...) | Fica mais rápido até começar a oscilar em volta do cilindro. Por quê, se o modelo ideal (sem atraso) nunca oscila? |
+| 3 | Perturbação | `kp_ang 1.0`, `vies_angular 0.15` | Com só P, o robô para torto: o erro em regime é cerca de `vies / Kp`. Dobre `Kp`: o erro cai pela metade, mas não zera |
+| 4 | Integral | mantenha o viés; `ki_ang 0.5`, depois `ki_ang 3.0` | O I zera o erro em regime (veja `/pid/angular/data[2]` crescer até cancelar o viés). Com `Ki` alto, sobressinal e oscilação lenta |
+| 5 | Derivativo | `vies_angular 0.0`, `ki_ang 0.0`, o `kp_ang` que oscilou no 2; `kd_ang 0.2`, depois `kd_ang 1.0` | O D amortece a oscilação; D demais volta a oscilar, porque a derivada de uma medida atrasada e ruidosa é pior ainda |
+| 6 | Filtro da derivada (TODO 5) | com `kd_ang` alto, `alfa_d 0.7` | O termo D (`data[3]`) fica menos serrilhado |
+| 7 | PID linear | `kp_lin 0.1`, depois `kp_lin 1.0` | Com ganho alto a saída satura em `v_max` quase todo o caminho e o controle vira liga/desliga perto do alvo |
+
+Ao final, escolha os seus ganhos para os dois PIDs, sem viés e com `vies_angular 0.15`.
+
+### 6.6 Para discutir
+
+1. No experimento 3, por que o erro em regime é `vies / Kp`? (Dica: parado, o comando total `Kp·e + vies` tem que ser zero.)
+2. Por que o I resolve o experimento 3 mas o D não?
+3. O que aconteceria sem o anti-windup se o robô ficasse muito tempo sem ver o alvo e com `ki_ang` alto? Por que o nó dá `reset()` nos PIDs quando perde o alvo?
+4. A distância vem da altura da caixa. O que acontece com essa medida quando o robô chega perto demais e o cilindro sai pelo alto ou por baixo da imagem?
+5. O erro angular é medido na câmera, que está 1,03 m à frente do centro do robô. Isso muda alguma coisa para o controle?
+
+**Entregável:** o PID e o `cylinder_follower` completos no repositório; os prints do `rqt_plot` dos experimentos 2 a 5, com uma frase sobre cada; e os ganhos finais que vocês escolheram.
+
+---
+
 ## Problemas comuns
 
 | Sintoma | Causa provável e solução |
@@ -962,6 +1088,9 @@ O robô faz o quadrado da Aula 3 e, com a câmera para a frente, passa pelos qua
 | `/camera/image_raw` sem mensagens ou imagem preta | Bloco da câmera fora do `robo.urdf.xacro`, ou faltou recompilar o `robo_description` e o `robo_gazebo` depois de colar o bloco |
 | `cv_bridge` ou `cv2` não encontrado ao compilar ou rodar | Imagem Docker antiga: reconstrua com `docker compose -f docker/docker-compose.yaml build` e recrie o contêiner |
 | Máscara cheia de pontinhos ou o chão aparece | Faixa larga demais ou `s_min` baixo: aumente `s_min`/`v_min` ou o `kernel_size` |
+| Na Aula 6, o robô gira sem parar | Ele não vê o alvo: confira se a `/vision/annotated` marca o cilindro, se o `cor` está escrito certo (`ros2 param get /cylinder_follower cor`) e se o `color_masks` e o `cylinder_detector` estão rodando |
+| `rqt_plot` vazio | Confira os campos: `/pid/angular/data[0]` (com colchetes); os tópicos só aparecem depois que o robô vê o alvo |
+| `ros2 param set /cylinder_follower kp_ang 3` é recusado | Os ganhos são `double`: use `3.0` |
 | `min_area` recusado (`ros2 param set` ou launch) | `min_area` é `double`: use `500.0`, não `500` |
 | `cylinder_detector` roda, mas nunca publica | O `TimeSynchronizer` não está casando: confira se o `color_masks` está rodando e se as máscaras saem com o `header` da câmera (TODO 6 da Aula 4) |
 | `vision_msgs` ou `message_filters` não encontrado ao compilar | Imagem Docker antiga: reconstrua com `docker compose -f docker/docker-compose.yaml build` e recrie o contêiner |
@@ -974,3 +1103,4 @@ O robô faz o quadrado da Aula 3 e, com a câmera para a frente, passa pelos qua
 - [Cartographer ROS](https://google-cartographer-ros.readthedocs.io/)
 - SDF: [SDF worlds do Gazebo](https://gazebosim.org/docs/harmonic/sdf_worlds/), [especificação do SDFormat](http://sdformat.org/spec)
 - OpenCV: [Changing Colorspaces](https://docs.opencv.org/4.x/df/d9d/tutorial_py_colorspaces.html), [Morphological Transformations](https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html), [Contours](https://docs.opencv.org/4.x/d4/d73/tutorial_py_contours_begin.html), [Contour Features](https://docs.opencv.org/4.x/dd/d49/tutorial_py_contour_features.html); [`message_filters`](https://docs.ros.org/en/jazzy/p/message_filters/message_filters.html); [`vision_msgs`](https://docs.ros.org/en/jazzy/p/vision_msgs/msg/Detection2D.html); [`cv_bridge`](https://index.ros.org/p/cv_bridge/); [câmera no Gazebo](https://gazebosim.org/docs/harmonic/sensors/)
+- Controle: [Controlador PID](https://pt.wikipedia.org/wiki/Controlador_proporcional_integral_derivativo); [`rqt_plot`](https://index.ros.org/p/rqt_plot/)

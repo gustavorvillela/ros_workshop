@@ -9,6 +9,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(vision_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(OpenCV REQUIRED COMPONENTS core imgproc)
 
 add_executable(route_mapper src/route_mapper.cpp)
@@ -24,7 +25,11 @@ add_executable(cylinder_detector src/cylinder_detector.cpp)
 ament_target_dependencies(cylinder_detector rclcpp sensor_msgs cv_bridge message_filters vision_msgs)
 target_link_libraries(cylinder_detector ${OpenCV_LIBS})
 
-install(TARGETS route_mapper color_masks cylinder_detector DESTINATION lib/${PROJECT_NAME})
+# Aula 6
+add_executable(cylinder_follower src/cylinder_follower.cpp)
+ament_target_dependencies(cylinder_follower rclcpp geometry_msgs sensor_msgs std_msgs vision_msgs)
+
+install(TARGETS route_mapper color_masks cylinder_detector cylinder_follower DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
 ament_package()

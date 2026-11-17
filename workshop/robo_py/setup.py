@@ -18,7 +18,7 @@ setup(
     zip_safe=True,
     maintainer='Gustavo Rocha Villela',
     maintainer_email='grvillela@cos.ufrj.br',
-    description='Trilha Python: nós obstacle_avoider (Aula 1), route_mapper (Aula 3), color_masks (Aula 4) e cylinder_detector (Aula 5)',
+    description='Trilha Python: nós obstacle_avoider (Aula 1), route_mapper (Aula 3), color_masks (Aula 4), cylinder_detector (Aula 5) e cylinder_follower (Aula 6)',
     license='MIT',
     entry_points={
         'console_scripts': [
@@ -26,6 +26,7 @@ setup(
             'route_mapper = robo_py.route_mapper:main',
             'color_masks = robo_py.color_masks:main',
             'cylinder_detector = robo_py.cylinder_detector:main',
+            'cylinder_follower = robo_py.cylinder_follower:main',
         ],
     },
 )
