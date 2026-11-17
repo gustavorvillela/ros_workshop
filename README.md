@@ -81,11 +81,12 @@ ros_workshop/
     │   ├── config/robo_2d.lua        # (você cria) configuração do Cartographer
     │   └── launch/cartographer.launch.py   # pronto: chama o turtlebot3_cartographer com o robo_2d.lua
     └── robo_lp/                      # nós da trilha C++, Aulas 3 a 6
+        ├── include/robo_lp/
+        │   └── pid.hpp               # (você completa) TODO 1 a 5, Aula 6
         ├── src/
         │   ├── route_mapper.cpp      # (você completa) TODO 1 a 9, Aula 3
         │   ├── color_masks.cpp       # (você completa) TODO 1 a 7, Aula 4
         │   ├── cylinder_detector.cpp # (você completa) TODO 1 a 9, Aula 5
-        │   ├── pid.hpp               # (você completa) TODO 1 a 5, Aula 6
         │   └── cylinder_follower.cpp # (você completa) TODO 1 a 6, Aula 6
         └── launch/
             ├── aula5.launch.py       # (você completa) TODO 1 a 3, Aula 5
@@ -1002,7 +1003,7 @@ São dois PIDs independentes: o **angular** comanda `angular.z` e o **linear** c
 
 ### 6.3 Exercício: o PID
 
-**Arquivo:** `workshop/robo_lp/src/pid.hpp`. A classe é usada duas vezes pelo nó da próxima seção; os limites já vêm prontos no construtor.
+**Arquivo:** `workshop/robo_lp/include/robo_lp/pid.hpp`. A classe é usada duas vezes pelo nó da próxima seção; os limites já vêm prontos no construtor. Ela fica em `include/robo_lp/`, a pasta padrão de cabeçalhos de um pacote C++ do ROS 2, e o nó a inclui com `#include "robo_lp/pid.hpp"` (o `CMakeLists.txt` já aponta para essa pasta).
 
 | TODO | O que fazer |
 | --- | --- |

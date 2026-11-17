@@ -27,9 +27,11 @@ target_link_libraries(cylinder_detector ${OpenCV_LIBS})
 
 # Aula 6
 add_executable(cylinder_follower src/cylinder_follower.cpp)
+target_include_directories(cylinder_follower PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 ament_target_dependencies(cylinder_follower rclcpp geometry_msgs sensor_msgs std_msgs vision_msgs)
 
 install(TARGETS route_mapper color_masks cylinder_detector cylinder_follower DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY include/ DESTINATION include)
 
 ament_package()

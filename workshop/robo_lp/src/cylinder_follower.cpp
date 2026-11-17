@@ -3,7 +3,7 @@
 //   - angular: gira até o cilindro ficar no centro da imagem;
 //   - linear: anda até o cilindro ficar a 'distancia' metros da câmera.
 // Publica /cmd_vel e, para o rqt_plot, /pid/angular e /pid/linear com [erro, P, I, D, saída].
-// Complete os TODO 1 a 5 (o 6 é extensão). Antes, complete o pid.hpp.
+// Complete os TODO 1 a 5 (o 6 é extensão). Antes, complete o include/robo_lp/pid.hpp.
 // Compile com: cd ~/workshop_ws && colcon build --packages-select robo_lp
 
 #include <algorithm>
@@ -18,7 +18,7 @@
 #include "std_msgs/msg/float64_multi_array.hpp"
 #include "vision_msgs/msg/detection2_d_array.hpp"
 
-#include "pid.hpp"
+#include "robo_lp/pid.hpp"
 
 using namespace std::chrono_literals;
 using vision_msgs::msg::Detection2DArray;
